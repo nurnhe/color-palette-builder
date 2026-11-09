@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f1f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161113" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shade Studio">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Shade Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Manrope:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column like a compact mirror — controls on top, the palette "case" of round pans, then saved palettes. */
+:root {
+  --bg: #f6f1f2;
+  --surface: #fffdfd;
+  --case: #ece4e6;
+  --fg: #241a1f;
+  --muted: #76666d;
+  --line: #e2d7da;
+  --accent: #7b2d52;
+  --accent-fg: #fff7fa;
+  --focus: #b5487c;
+  --pan-rim: rgba(36, 26, 31, .14);
+  --font-display: "Bodoni Moda", "Didot", "Bodoni 72", Georgia, serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161113; --surface: #211a1d; --case: #2b2226; --fg: #f4eaee; --muted: #a9979f;
+    --line: #3a2e33; --accent: #e7a1c2; --accent-fg: #2a0f1c; --focus: #f0b6d1;
+    --pan-rim: rgba(255, 240, 246, .16); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161113; --surface: #211a1d; --case: #2b2226; --fg: #f4eaee; --muted: #a9979f;
+  --line: #3a2e33; --accent: #e7a1c2; --accent-fg: #2a0f1c; --focus: #f0b6d1;
+  --pan-rim: rgba(255, 240, 246, .16); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; flex-direction: column; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 30px; line-height: 1.1; letter-spacing: -.01em; }
+.brand h1 em { font-style: italic; color: var(--accent); }
+.brand span { font-size: 13px; color: var(--muted); }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); display: grid; place-items: center; flex: none;
+}
+.icon-btn svg { width: 20px; height: 20px; }
+
+.composer { display: flex; flex-direction: column; gap: 12px; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.text-input {
+  width: 100%; min-height: 48px; padding: 12px 14px; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surface); font-size: 16px;
+}
+.text-input::placeholder { color: var(--muted); opacity: .8; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.hint.warn { color: var(--accent); }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  border: 1px solid var(--line); background: transparent; border-radius: 999px;
+  padding: 6px 12px; font-size: 13px; color: var(--muted);
+}
+.chip:hover { color: var(--fg); border-color: var(--muted); }
+
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.stepper button { width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; border-radius: 50%; }
+.stepper button:disabled { opacity: .35; cursor: default; }
+.stepper output { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+.btn {
+  min-height: 46px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+}
+.btn svg { width: 18px; height: 18px; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.grow { flex: 1 1 auto; justify-content: center; }
+
+/* The palette case */
+.case { background: var(--case); border-radius: 22px; padding: 18px 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+.case-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0 4px; flex-wrap: wrap; }
+.case-head h2 { margin: 0; font-family: var(--font-display); font-style: italic; font-weight: 500; font-size: 22px; text-wrap: balance; }
+.case-head span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pans { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 16px 10px; }
+.shade { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0; }
+.pan {
+  position: relative; width: 100%; max-width: 92px; aspect-ratio: 1; border-radius: 50%;
+  border: 0; padding: 0; background: var(--c);
+  box-shadow: inset 0 0 0 3px var(--pan-rim), inset 0 -6px 12px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.12);
+  transition: transform .15s ease;
+}
+.pan::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.35), rgba(255,255,255,0) 45%);
+  pointer-events: none;
+}
+.pan:active { transform: scale(.96); }
+.pan .lock {
+  position: absolute; right: -2px; top: -2px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--surface); color: var(--fg); display: grid; place-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2); opacity: 0; transform: scale(.6); transition: .15s ease;
+}
+.pan .lock svg { width: 15px; height: 15px; }
+.pan[aria-pressed="true"] .lock { opacity: 1; transform: none; }
+.role { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.name { font-size: 13px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.hex {
+  font-family: var(--font-mono); font-size: 12px; border: 0; background: transparent; color: var(--muted);
+  padding: 4px 6px; border-radius: 6px;
+}
+.hex:hover { color: var(--fg); background: var(--surface); }
+.case-foot { display: flex; gap: 8px; flex-wrap: wrap; }
+.case-foot .btn { min-height: 42px; font-size: 14px; padding: 0 14px; }
+.case-foot #reroll { flex: 1 1 auto; justify-content: center; }
+
+/* Saved */
+.saved h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 500; font-size: 22px; }
+.saved-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.saved-item {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px;
+}
+.saved-open { display: flex; flex-direction: column; gap: 8px; border: 0; background: transparent; padding: 0; text-align: left; min-width: 0; }
+.strip { display: flex; height: 26px; border-radius: 8px; overflow: hidden; }
+.strip i { flex: 1; background: var(--c); }
+.saved-meta { font-size: 13px; color: var(--muted); }
+.saved-meta b { color: var(--fg); font-weight: 600; }
+.del { border: 0; background: transparent; color: var(--muted); font-size: 13px; padding: 8px; border-radius: 8px; }
+.del.armed { color: var(--accent); font-weight: 700; }
+.empty { color: var(--muted); font-size: 14px; margin: 0; }
+
+/* Settings */
+dialog {
+  border: 0; border-radius: 22px; padding: 22px; width: min(420px, calc(100vw - 32px));
+  background: var(--surface); color: var(--fg); box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+dialog::backdrop { background: rgba(20, 10, 15, .45); }
+dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500; font-size: 24px; }
+.set { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 3px; background: var(--bg); }
+.seg button { border: 0; background: transparent; border-radius: 999px; padding: 9px 16px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.dialog-actions { display: flex; justify-content: flex-end; }
+
+.toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
+  background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: .2s ease; max-width: calc(100vw - 32px);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>Shade <em>Studio</em></h1>
+      <span>Makeup palettes on demand</span>
+    </div>
+    <button class="icon-btn" id="openSettings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <form class="composer" id="composer" autocomplete="off">
+    <div class="field">
+      <label class="label" for="seed">Start from colors (optional)</label>
+      <input class="text-input" id="seed" type="text" enterkeyhint="go" placeholder="warm brown, #d49a8c, dusty rose">
+      <p class="hint" id="seedHint">Leave empty for a fully random palette. Hex codes and words both work.</p>
+      <div class="examples" aria-label="Examples">
+        <button type="button" class="chip" data-ex="warm brown, gold">warm brown, gold</button>
+        <button type="button" class="chip" data-ex="dusty rose, mauve">dusty rose, mauve</button>
+        <button type="button" class="chip" data-ex="smoky plum">smoky plum</button>
+        <button type="button" class="chip" data-ex="#c9785f, olive">#c9785f, olive</button>
+        <button type="button" class="chip" data-ex="cobalt, coral">cobalt, coral</button>
+        <button type="button" class="chip" data-ex="autumn">autumn</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="stepper" role="group" aria-label="Number of colors">
+        <button type="button" id="minus" aria-label="Fewer colors">−</button>
+        <output id="count" aria-live="polite">6 colors</output>
+        <button type="button" id="plus" aria-label="More colors">+</button>
+      </div>
+      <button class="btn primary grow" type="submit" id="generate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+        New palette
+      </button>
+    </div>
+  </form>
+
+  <section class="case" aria-labelledby="paletteTitle">
+    <div class="case-head">
+      <h2 id="paletteTitle">Palette</h2>
+      <span id="paletteMeta"></span>
+    </div>
+    <div class="pans" id="pans"></div>
+    <p class="hint">Tap a shade to lock it, then reroll the rest. Tap a code to copy it.</p>
+    <div class="case-foot">
+      <button class="btn primary" type="button" id="reroll">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        Reroll unlocked
+      </button>
+      <button class="btn" type="button" id="save">Save</button>
+      <button class="btn" type="button" id="copyAll">Copy all</button>
+    </div>
+  </section>
+
+  <section class="saved" aria-labelledby="savedTitle">
+    <h2 id="savedTitle">Saved palettes</h2>
+    <ul class="saved-list" id="savedList"></ul>
+  </section>
+</div>
+
+<dialog id="settings" aria-labelledby="settingsTitle">
+  <form method="dialog" id="settingsForm">
+    <h2 id="settingsTitle">Settings</h2>
+    <div class="set">
+      <span class="label" id="defLabel">Default number of colors</span>
+      <div class="stepper" role="group" aria-labelledby="defLabel">
+        <button type="button" id="defMinus" aria-label="Fewer">−</button>
+        <output id="defCount">6</output>
+        <button type="button" id="defPlus" aria-label="More">+</button>
+      </div>
+      <p class="hint">New palettes start with this many shades (1 to 12).</p>
+    </div>
+    <div class="set">
+      <span class="label" id="styleLabel">Style</span>
+      <div class="seg" role="group" aria-labelledby="styleLabel">
+        <button type="button" data-style="bold" aria-pressed="true">Bold</button>
+        <button type="button" data-style="wearable" aria-pressed="false">Wearable</button>
+      </div>
+      <p class="hint">Bold mixes strong color-wheel combos. Wearable sticks to classic makeup tones with a shade for each spot.</p>
+    </div>
+    <div class="set" id="typeSet">
+      <span class="label" id="typeLabel">Palette type</span>
+      <div class="seg" role="group" aria-labelledby="typeLabel">
+        <button type="button" data-type="eyes" aria-pressed="true">Eyes</button>
+        <button type="button" data-type="face" aria-pressed="false">Full face</button>
+      </div>
+      <p class="hint">Full face adds blush, bronzer and lip shades.</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn primary" value="done" id="settingsDone">Done</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- color math ---------- */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const wrapH = h => ((h % 360) + 360) % 360;
+const hueDiff = (a, b) => { const d = wrapH(b - a); return d > 180 ? d - 360 : d; };
+const towardHue = (h, target, t) => wrapH(h + hueDiff(h, target) * t);
+
+function hslToRgb(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [f(0), f(8), f(4)].map(v => Math.round(v * 255));
+}
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+  let h = 0, s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > .5 ? d / (2 - max - min) : d / (max + min);
+    h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h, s: s * 100, l: l * 100 };
+}
+const hexToRgb = hex => {
+  let x = hex.replace('#', '');
+  if (x.length === 3) x = x.split('').map(c => c + c).join('');
+  return [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16));
+};
+const rgbToHex = rgb => '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+const hslToHex = c => rgbToHex(hslToRgb(c.h, c.s, c.l));
+const hexToHsl = hex => rgbToHsl(...hexToRgb(hex));
+function rgbToLab([r, g, b]) {
+  const lin = v => { v /= 255; return v > .04045 ? ((v + .055) / 1.055) ** 2.4 : v / 12.92; };
+  [r, g, b] = [lin(r), lin(g), lin(b)];
+  const x = (r * .4124 + g * .3576 + b * .1805) / .95047, y = r * .2126 + g * .7152 + b * .0722, z = (r * .0193 + g * .1192 + b * .9505) / 1.08883;
+  const f = t => t > .008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+}
+const deltaE = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const labOfHsl = c => rgbToLab(hslToRgb(c.h, c.s, c.l));
+
+/* ---------- color vocabulary ---------- */
+const NAMED = {
+  ivory:'#F3EBDA', cream:'#F1E3C8', champagne:'#EED8BC', vanilla:'#F0DDB8', bone:'#E6D9C6', beige:'#D8C0A2',
+  nude:'#D6AE96', sand:'#CBAE88', tan:'#BF9670', camel:'#B98A5A', caramel:'#AE6E3D', honey:'#D19A4C',
+  taupe:'#8E7A6E', mocha:'#7A5A48', coffee:'#6C4C37', chocolate:'#4F3127', espresso:'#3A2620', brown:'#7A4B33',
+  cinnamon:'#A0532F', copper:'#B5703F', bronze:'#946630', gold:'#C9A24A', golden:'#C9A24A', mustard:'#BE972E', yellow:'#E3C44D',
+  peach:'#F0B08F', apricot:'#EBA47E', coral:'#E3735F', salmon:'#E68C79', terracotta:'#BD5F40', rust:'#A2472C',
+  brick:'#8E3B2C', orange:'#DC7838', red:'#B5262F', cherry:'#9C1C2E', wine:'#6C2131', burgundy:'#6A1D2D', bordeaux:'#5E1A2A',
+  oxblood:'#4E1B20', cranberry:'#932340', berry:'#8A2C4D', raspberry:'#AE315B', fuchsia:'#BF3480', magenta:'#AD3480',
+  pink:'#E59CB1', rose:'#C67B84', blush:'#E4A5A2', mauve:'#A57787', plum:'#6B3550', purple:'#683E84', violet:'#784FA0',
+  lilac:'#C0A5CE', lavender:'#B6A6D5', orchid:'#B46BA9', eggplant:'#432A41', aubergine:'#432A41', grape:'#5A3466',
+  navy:'#253455', blue:'#3A5DA6', cobalt:'#2F50AC', denim:'#4B6A92', sky:'#8DB4DA', teal:'#2D7A79', turquoise:'#3FB2AD',
+  aqua:'#6CC6C4', mint:'#A4D7BE', green:'#4E7A4A', emerald:'#1F7955', jade:'#3C8C6C', olive:'#6A6A3B', khaki:'#A4996A',
+  sage:'#99A78B', moss:'#69723F', forest:'#2F4B36', grey:'#8A8486', gray:'#8A8486', silver:'#BDBABE', smoke:'#6D6568',
+  charcoal:'#3A3537', gunmetal:'#4A4C52', black:'#1F1B1D', white:'#F3EFEC',
+  ice:'#D7EDF2', lime:'#9BCB3C', chartreuse:'#B9D334', periwinkle:'#8E9ADB', seafoam:'#9FE0C0', lemon:'#F1E46A',
+  indigo:'#3E2D7E', crimson:'#B2142F', scarlet:'#D2232A', tangerine:'#F08A28', butter:'#F2E2A0', cyan:'#2FB8D0', sapphire:'#1F3E8C', amethyst:'#8A5CB8'
+};
+const ALIASES = { pinkish:'pink', pinky:'pink', reddish:'red', brownish:'brown', purplish:'purple', bluish:'blue', greenish:'green',
+  orangey:'orange', peachy:'peach', golden:'gold', coppery:'copper', silvery:'silver', grayish:'gray', greyish:'grey', purple:'purple',
+  nudes:'nude', browns:'brown', pinks:'pink', reds:'red', golds:'gold', bronzy:'bronze', plummy:'plum', berries:'berry', lilacs:'lilac' };
+
+// adjectives that tweak a color (or the whole palette if used alone)
+const MODS = {
+  warm:   c => ({ ...c, h: towardHue(c.h, 30, .35), s: c.s + 6 }),
+  warmer: c => ({ ...c, h: towardHue(c.h, 30, .5), s: c.s + 8 }),
+  cool:   c => ({ ...c, h: towardHue(c.h, c.h > 90 && c.h < 250 ? 210 : 320, .35), s: c.s - 6 }),
+  cooler: c => ({ ...c, h: towardHue(c.h, c.h > 90 && c.h < 250 ? 210 : 320, .5), s: c.s - 8 }),
+  dusty:  c => ({ ...c, s: c.s * .6, l: c.l + 4 }),
+  muted:  c => ({ ...c, s: c.s * .6 }),
+  soft:   c => ({ ...c, s: c.s * .75, l: c.l + (90 - c.l) * .25 }),
+  light:  c => ({ ...c, l: c.l + (92 - c.l) * .45 }),
+  pale:   c => ({ ...c, l: c.l + (94 - c.l) * .55, s: c.s * .85 }),
+  pastel: c => ({ ...c, l: c.l + (92 - c.l) * .55, s: Math.min(c.s, 60) }),
+  deep:   c => ({ ...c, l: c.l * .65, s: c.s + 6 }),
+  dark:   c => ({ ...c, l: c.l * .6 }),
+  rich:   c => ({ ...c, l: c.l * .8, s: c.s + 12 }),
+  bright: c => ({ ...c, s: c.s + 25, l: clamp(c.l, 40, 65) }),
+  vivid:  c => ({ ...c, s: c.s + 30 }),
+  bold:   c => ({ ...c, s: c.s + 20, l: c.l * .9 }),
+  neon:   c => ({ ...c, s: 95, l: clamp(c.l, 50, 60) }),
+  smoky:  c => ({ ...c, s: c.s * .5, l: c.l * .8 }),
+  rosy:   c => ({ ...c, h: towardHue(c.h, 350, .4), s: c.s + 4 }),
+  burnt:  c => ({ ...c, h: towardHue(c.h, 20, .4), l: c.l * .75 }),
+  medium: c => ({ ...c, l: c.l + (50 - c.l) * .5 }),
+  mid:    c => ({ ...c, l: c.l + (50 - c.l) * .5 }),
+};
+// finish words and filler we accept quietly
+const IGNORE = new Set(['shimmer','shimmery','metallic','matte','satin','glitter','glittery','sparkly','frost','frosty','shade','shades',
+  'color','colour','colors','colours','tone','tones','toned','eye','eyes','eyeshadow','look','palette','with','a','an','the','of','some','and','or','ish','y','in','for','like','-']);
+// palette-wide moods that make sense on their own
+const MOOD_WORDS = { neutral:'neutral', neutrals:'neutral', natural:'neutral', earthy:'earthy', everyday:'neutral', romantic:'rosy',
+  sunset:'sunset', autumn:'earthy', fall:'earthy', winter:'icy', icy:'icy', spring:'spring', summer:'sunset', night:'smoky', evening:'smoky',
+  party:'bold', glam:'bold', colorful:'bold', colourful:'bold' };
+
+function parseSeeds(text) {
+  const seeds = [], mods = [], moods = [], unknown = [];
+  const parts = text.toLowerCase().split(/[,;\n]+|\s+and\s+|\s*\+\s*/).map(s => s.trim()).filter(Boolean);
+  for (const part of parts) {
+    let segMods = [], nouns = [];
+    const tokens = part.match(/#?[0-9a-f]{6}\b|#[0-9a-f]{3}\b|[a-z]+(?:-[a-z]+)?/g) || [];
+    for (let tok of tokens) {
+      if (/^#?[0-9a-f]{6}$/.test(tok) || /^#[0-9a-f]{3}$/.test(tok)) {
+        if (!tok.startsWith('#') && /^[a-z]+$/.test(tok)) { /* a word like "facade" - fall through */ }
+        else { seeds.push({ ...hexToHsl(tok), src: tok.startsWith('#') ? tok.toUpperCase() : '#' + tok.toUpperCase() }); continue; }
+      }
+      const pieces = tok.split('-');
+      for (let w of pieces) {
+        if (ALIASES[w]) w = ALIASES[w];
+        if (NAMED[w]) nouns.push(w);
+        else if (MODS[w]) segMods.push(w);
+        else if (MOOD_WORDS[w]) moods.push(MOOD_WORDS[w]);
+        else if (w.endsWith('ish') && NAMED[w.slice(0, -3)]) nouns.push(w.slice(0, -3));
+        else if (w.endsWith('y') && MODS[w.slice(0, -1)]) segMods.push(w.slice(0, -1));
+        else if (!IGNORE.has(w) && w.length > 1) unknown.push(w);
+      }
+    }
+    if (nouns.length) {
+      // "rose gold", "pink brown": blend the nouns, last noun counts most
+      let c = hexToHsl(NAMED[nouns[nouns.length - 1]]);
+      for (let i = nouns.length - 2; i >= 0; i--) {
+        const o = hexToHsl(NAMED[nouns[i]]);
+        c = { h: towardHue(c.h, o.h, .35), s: c.s * .65 + o.s * .35, l: c.l * .65 + o.l * .35 };
+      }
+      for (const m of segMods) c = MODS[m](c);
+      c = { h: wrapH(c.h), s: clamp(c.s, 0, 100), l: clamp(c.l, 4, 97) };
+      seeds.push({ ...c, src: part.trim() });
+    } else if (segMods.length) {
+      mods.push(...segMods);
+    }
+  }
+  return { seeds, mods, moods, unknown };
+}
+
+/* ---------- shade roles ---------- */
+// l = lightness range, s = saturation range (before mood multiplier), hue = how it relates to the base hue
+const ROLES = {
+  highlight: { label: 'Highlight',  l: [84, 92], s: [28, 55], hue: b => towardHue(wrapH(b + rand(-10, 10)), 38, .5) },
+  transition:{ label: 'Transition', l: [62, 72], s: [24, 40], hue: b => towardHue(wrapH(b + rand(-8, 8)), 24, .45) },
+  lid:       { label: 'Lid',        l: [52, 70], s: [36, 62], hue: b => wrapH(b + rand(-10, 10)) },
+  shimmer:   { label: 'Shimmer',    l: [62, 78], s: [42, 70], hue: b => wrapH(b + rand(-28, 28)) },
+  crease:    { label: 'Crease',     l: [36, 48], s: [26, 46], hue: b => wrapH(b + rand(-12, 12)) },
+  deep:      { label: 'Outer V',    l: [18, 28], s: [20, 40], hue: b => wrapH(b + rand(-12, 12)) },
+  liner:     { label: 'Liner',      l: [9, 15],  s: [8, 28],  hue: b => wrapH(b + rand(-15, 15)) },
+  accent:    { label: 'Accent',     l: [34, 54], s: [42, 72], hue: b => wrapH(b + pick([-1, 1]) * rand(40, 75)) },
+  pop:       { label: 'Pop',        l: [44, 62], s: [55, 82], hue: b => wrapH(b + rand(140, 220)) },
+  bronzer:   { label: 'Bronzer',    l: [38, 48], s: [30, 46], hue: () => rand(20, 32), fixedSat: true },
+  blush:     { label: 'Blush',      l: [62, 74], s: [40, 64], hue: b => { const h = towardHue(b, 2, .7); return wrapH(clamp(hueDiff(0, h), -18, 22)); }, fixedSat: true },
+  lip:       { label: 'Lip',        l: [32, 48], s: [40, 64], hue: b => { const h = towardHue(b, 355, .7); return wrapH(clamp(hueDiff(0, h), -20, 16)); }, fixedSat: true },
+};
+const PRIORITY = {
+  eyes: ['lid', 'crease', 'highlight', 'deep', 'transition', 'accent', 'shimmer', 'liner', 'pop'],
+  face: ['lid', 'crease', 'blush', 'lip', 'highlight', 'deep', 'transition', 'bronzer', 'accent', 'shimmer', 'liner', 'pop'],
+};
+const DISPLAY = ['highlight', 'transition', 'lid', 'shimmer', 'crease', 'deep', 'liner', 'accent', 'pop', 'bronzer', 'blush', 'lip'];
+const EXTRA = ['lid', 'shimmer', 'accent', 'crease'];
+
+function rolesFor(n, type) {
+  const pri = PRIORITY[type];
+  const base = pri.slice(0, Math.min(n, pri.length));
+  const roles = base.sort((a, b) => DISPLAY.indexOf(a) - DISPLAY.indexOf(b));
+  for (let i = 0; roles.length < n; i++) roles.push(EXTRA[i % EXTRA.length]);
+  return roles;
+}
+
+/* ---------- moods for random palettes ---------- */
+const MOODS = {
+  neutral: { name: 'Warm neutrals', hue: () => rand(18, 36),  sat: .85 },
+  rosy:    { name: 'Rosy',          hue: () => rand(-12, 10), sat: 1 },
+  golden:  { name: 'Golden hour',   hue: () => rand(32, 46),  sat: 1.15 },
+  taupe:   { name: 'Cool taupe',    hue: () => rand(320, 350), sat: .5 },
+  smoky:   { name: 'Smoky',         hue: () => rand(0, 360),  sat: .35 },
+  berry:   { name: 'Berry',         hue: () => rand(318, 345), sat: 1.05 },
+  plum:    { name: 'Plum',          hue: () => rand(285, 315), sat: .9 },
+  earthy:  { name: 'Earthy',        hue: () => rand(60, 100), sat: .75 },
+  sunset:  { name: 'Sunset',        hue: () => rand(8, 26),   sat: 1.2 },
+  ocean:   { name: 'Ocean',         hue: () => rand(185, 220), sat: .95 },
+  icy:     { name: 'Icy',           hue: () => rand(200, 260), sat: .7 },
+  spring:  { name: 'Spring',        hue: () => rand(90, 150), sat: .9 },
+  bold:    { name: 'Bold',          hue: () => rand(0, 360),  sat: 1.35 },
+};
+const RANDOM_WEIGHTS = ['neutral','neutral','rosy','rosy','golden','taupe','smoky','berry','plum','earthy','sunset','ocean','bold','icy','spring'];
+
+/* ---------- generation ---------- */
+function makeShade(role, base, satMul, lightBias) {
+  const r = ROLES[role];
+  const mul = r.fixedSat ? Math.sqrt(satMul) : satMul;
+  return {
+    h: r.hue(base),
+    s: clamp(rand(r.s[0], r.s[1]) * mul, 3, 92),
+    l: clamp(rand(r.l[0], r.l[1]) + lightBias, 6, 95),
+  };
+}
+
+function seedInfo(anchors) {
+  const colorful = anchors.filter(a => a.s > 10 && a.l > 8 && a.l < 95);
+  const ref = colorful.length ? colorful.reduce((a, b) => (b.s > a.s ? b : a)) : null;
+  const avgS = colorful.length ? colorful.reduce((t, a) => t + a.s, 0) / colorful.length : 12;
+  return { base: ref ? ref.h : rand(15, 35), satMul: clamp(avgS / 45, .3, 1.5) };
+}
+
+/* Bold style: color-wheel harmonies with strong colors and a wide light-to-dark spread */
+const SCHEMES = {
+  analogous:     { name: 'Analogous',           offsets: [0, 32, -32, 64, -64] },
+  complementary: { name: 'Complementary',       offsets: [0, 180, 20, 200, -20] },
+  split:         { name: 'Split complementary', offsets: [0, 150, 210, 0, 150] },
+  triadic:       { name: 'Triadic',             offsets: [0, 120, 240] },
+  square:        { name: 'Square',              offsets: [0, 90, 180, 270] },
+  contrast:      { name: 'High contrast',       offsets: [0, 180, 0, 180, 90] },
+};
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// try many candidates and keep the one furthest from the colors already chosen
+function mostDistinct(make, existing, enough) {
+  const labs = existing.map(labOfHsl);
+  let best = null, bestD = -1;
+  for (let i = 0; i < 60; i++) {
+    const c = make(), lab = labOfHsl(c);
+    const d = labs.length ? Math.min(...labs.map(x => deltaE(x, lab))) : Infinity;
+    if (d > bestD) { best = c; bestD = d; }
+    if (d >= enough) break;
+  }
+  return best;
+}
+// scheme hues first; for bigger palettes, keep splitting the widest gap on the color wheel
+function hueList(offsets, n) {
+  const hs = [...new Set(offsets.map(wrapH))];
+  while (hs.length < n) {
+    const sorted = [...hs].sort((a, b) => a - b);
+    let gi = 0, gap = -1;
+    sorted.forEach((h, i) => { const g = wrapH((sorted[(i + 1) % sorted.length] ?? h) - h) || 360; if (g > gap) { gap = g; gi = i; } });
+    hs.push(wrapH(sorted[gi] + gap / 2));
+  }
+  // when there are more slots than hues, the shared hues still get different lightness levels
+  return Array.from({ length: n }, (_, i) => hs[i % hs.length]);
+}
+
+function generateBold({ count, anchors = [], moodKey = null, mods = [] }) {
+  count = Math.max(count, anchors.length);
+  let base, satMul = 1, lightBias = 0;
+  if (anchors.length) base = seedInfo(anchors).base;
+  else base = wrapH(moodKey ? MOODS[moodKey].hue() : rand(0, 360));
+  if (moodKey) satMul = clamp(MOODS[moodKey].sat, .55, 1.3);
+  for (const m of mods) {
+    const probe = MODS[m]({ h: base, s: 70 * satMul, l: 50 });
+    base = probe.h; satMul = clamp(probe.s / 70, .3, 1.4); lightBias += (probe.l - 50) * .5;
+  }
+  const schemeKey = pick(Object.keys(SCHEMES));
+  const offsets = SCHEMES[schemeKey].offsets;
+
+  const slots = Array.from({ length: count }, () => ({ role: null, color: null, locked: false, src: null }));
+  const loose = [];
+  for (const a of anchors) {
+    if (a.index != null && a.index < count && !slots[a.index].color) Object.assign(slots[a.index], { color: { h: a.h, s: a.s, l: a.l }, locked: true, src: a.src || null });
+    else loose.push(a);
+  }
+  for (const a of loose) {
+    const i = slots.findIndex(s => !s.color);
+    Object.assign(slots[i], { color: { h: a.h, s: a.s, l: a.l }, locked: true, src: a.src || null });
+  }
+  // spread lightness evenly from deep to light, skipping levels the kept colors already cover
+  const free = slots.filter(s => !s.color);
+  let levels = Array.from({ length: count }, (_, i) => count === 1 ? 50 : 16 + (74 * i) / (count - 1));
+  for (const s of slots) if (s.color) {
+    let bi = 0; levels.forEach((v, i) => { if (Math.abs(v - s.color.l) < Math.abs(levels[bi] - s.color.l)) bi = i; });
+    levels.splice(bi, 1);
+  }
+  levels = shuffle(levels);
+  const hues = shuffle(hueList(offsets, free.length));
+  free.forEach((s, k) => {
+    s.color = mostDistinct(() => {
+      const l = clamp(levels[k] + rand(-6, 6) + lightBias, 8, 94);
+      const edge = l > 84 || l < 18 ? .75 : 1;
+      return { h: wrapH(base + hues[k] + rand(-8, 8)), s: clamp(rand(50, 95) * satMul * edge, 8, 100), l };
+    }, slots.filter(o => o.color).map(o => o.color), 28);
+  });
+  const title = anchors.length ? titleFromSeeds(anchors) : (moodKey ? MOODS[moodKey].name + ' · ' : '') + SCHEMES[schemeKey].name;
+  return { title, swatches: slots.map(s => ({ role: null, hex: hslToHex(s.color), locked: s.locked, src: s.src })) };
+}
+
+// anchors: [{h,s,l, role?, src?}] kept as-is; the rest is generated around them
+function generate(opts) {
+  if ((opts.style || settings.style) === 'bold') return generateBold(opts);
+  let { count, type, anchors = [], moodKey = null, mods = [] } = opts;
+  count = Math.max(count, anchors.length);
+  const roles = rolesFor(count, type);
+  let base, satMul, lightBias = 0, title;
+  if (anchors.length) {
+    ({ base, satMul } = seedInfo(anchors));
+    if (moodKey) satMul *= MOODS[moodKey].sat;
+  } else {
+    const m = MOODS[moodKey || pick(RANDOM_WEIGHTS)];
+    base = wrapH(m.hue()); satMul = m.sat; title = m.name;
+  }
+  for (const m of mods) {
+    const probe = MODS[m]({ h: base, s: 50 * satMul, l: 50 });
+    base = probe.h; satMul = clamp(probe.s / 50, .15, 1.8); lightBias += (probe.l - 50) * .4;
+  }
+
+  // place anchors: keep known roles, otherwise pick the free role closest in lightness
+  const slots = roles.map(role => ({ role, color: null, locked: false, src: null }));
+  const pending = [];
+  for (const a of anchors) {
+    const i = a.role ? slots.findIndex(s => !s.color && s.role === a.role) : -1;
+    if (i >= 0) Object.assign(slots[i], { color: { h: a.h, s: a.s, l: a.l }, locked: true, src: a.src || null });
+    else pending.push(a);
+  }
+  for (const a of pending) {
+    let best = -1, bestD = Infinity;
+    slots.forEach((s, i) => {
+      if (s.color) return;
+      const r = ROLES[s.role], mid = (r.l[0] + r.l[1]) / 2;
+      const d = Math.abs(a.l - mid) + (r.fixedSat ? 6 : 0);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    Object.assign(slots[best], { color: { h: a.h, s: a.s, l: a.l }, locked: true, src: a.src || null });
+  }
+
+  // fill the rest, avoiding near-duplicates
+  for (const s of slots) {
+    if (s.color) continue;
+    s.color = mostDistinct(() => makeShade(s.role, base, satMul, lightBias), slots.filter(o => o.color).map(o => o.color), 16);
+  }
+  if (!title) title = anchors.length ? titleFromSeeds(anchors) : 'Palette';
+  return { title, swatches: slots.map(s => ({ role: s.role, hex: hslToHex(s.color), locked: s.locked, src: s.src })) };
+}
+
+function titleFromSeeds(anchors) {
+  const words = anchors.map(a => a.src).filter(s => s && !s.startsWith('#'));
+  if (words.length) {
+    const t = words.slice(0, 2).join(' & ');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  return 'Built around ' + nameColor(anchors[0].src || hslToHex(anchors[0])).toLowerCase();
+}
+
+/* ---------- naming ---------- */
+const NAME_LIST = Object.entries(NAMED).filter(([k]) => !['golden','gray','aubergine','white'].includes(k))
+  .map(([k, hex]) => ({ k, hsl: hexToHsl(hex), lab: rgbToLab(hexToRgb(hex)) }));
+function nameColor(hex) {
+  const lab = rgbToLab(hexToRgb(hex)), c = hexToHsl(hex);
+  let best = NAME_LIST[0], bd = Infinity;
+  for (const n of NAME_LIST) { const d = deltaE(lab, n.lab); if (d < bd) { bd = d; best = n; } }
+  const parts = [];
+  const dl = c.l - best.hsl.l, ds = c.s - best.hsl.s;
+  if (dl > 12) parts.push(c.l > 80 ? 'Pale' : 'Light');
+  else if (dl < -12) parts.push('Deep');
+  if (!parts.length && ds < -18 && best.hsl.s > 20) parts.push('Dusty');
+  else if (!parts.length && ds > 18) parts.push('Bright');
+  parts.push(best.k.charAt(0).toUpperCase() + best.k.slice(1));
+  return parts.join(' ').replace(/^(\w)/, m => m.toUpperCase()).replace(/ (\w)/g, (m, x) => ' ' + x.toLowerCase());
+}
+
+/* ---------- storage ---------- */
+const store = {
+  get(key, fallback) { try { const v = localStorage.getItem('shade-studio:' + key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } },
+  set(key, val) { try { localStorage.setItem('shade-studio:' + key, JSON.stringify(val)); } catch {} },
+};
+
+/* ---------- state ---------- */
+const MIN = 1, MAX = 12;
+const settings = Object.assign({ defaultCount: 6, type: 'eyes', style: 'bold' }, store.get('settings', {}));
+let count = settings.defaultCount;
+let palette = null;
+let lastParse = { mods: [], moods: [] };
+let saved = store.get('saved', []);
+
+/* ---------- ui ---------- */
+const $ = id => document.getElementById(id);
+const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1600);
+}
+async function copy(text, label) {
+  try { await navigator.clipboard.writeText(text); toast(label || 'Copied'); }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    let ok = false; try { ok = document.execCommand('copy'); } catch {}
+    ta.remove(); toast(ok ? (label || 'Copied') : 'Copying is blocked here. Long-press the code instead.');
+  }
+}
+
+function renderCount() {
+  $('count').textContent = count + (count === 1 ? ' color' : ' colors');
+  $('minus').disabled = count <= MIN; $('plus').disabled = count >= MAX;
+}
+
+function renderPalette() {
+  $('paletteTitle').textContent = palette.title;
+  const locked = palette.swatches.filter(s => s.locked).length;
+  $('paletteMeta').textContent = palette.swatches.length + ' shades' + (locked ? ' · ' + locked + ' locked' : '');
+  $('pans').innerHTML = palette.swatches.map((s, i) => {
+    const name = nameColor(s.hex);
+    return `<div class="shade">
+      <button class="pan" style="--c:${s.hex}" data-i="${i}" aria-pressed="${s.locked}" aria-label="${esc((s.role ? ROLES[s.role].label + ', ' : '') + name + (s.locked ? ', locked' : ', tap to lock'))}"><span class="lock">${LOCK_SVG}</span></button>
+      ${s.role ? `<span class="role">${esc(ROLES[s.role].label)}</span>` : ''}
+      <span class="name">${esc(name)}</span>
+      <button class="hex" data-hex="${s.hex}" aria-label="Copy ${s.hex}">${s.hex}</button>
+    </div>`;
+  }).join('');
+  $('reroll').disabled = false;
+}
+
+function anchorsFromLocked() {
+  return palette ? palette.swatches.map((s, index) => ({ s, index })).filter(x => x.s.locked).map(({ s, index }) => ({ ...hexToHsl(s.hex), role: s.role, src: s.src, index })) : [];
+}
+
+function newFromInput() {
+  const text = $('seed').value.trim();
+  const hint = $('seedHint');
+  const parsed = parseSeeds(text);
+  lastParse = parsed;
+  const moodKey = parsed.moods.length ? parsed.moods[parsed.moods.length - 1] : null;
+  if (parsed.seeds.length > count) { count = Math.min(MAX, parsed.seeds.length); renderCount(); }
+  palette = generate({ count, type: settings.type, anchors: parsed.seeds.slice(0, MAX), moodKey, mods: parsed.mods });
+  if (settings.style === 'wearable' && !parsed.seeds.length && (parsed.mods.length || moodKey)) {
+    const adj = [...parsed.mods, ...(moodKey ? [] : [])];
+    palette.title = moodKey ? MOODS[moodKey].name : adj[0].charAt(0).toUpperCase() + adj[0].slice(1) + ' palette';
+  }
+  if (parsed.unknown.length) {
+    hint.textContent = `I didn't recognize: ${parsed.unknown.join(', ')}. Try a hex code or a color like "mauve", "olive" or "copper".`;
+    hint.classList.add('warn');
+  } else if (parsed.seeds.length) {
+    hint.textContent = `Your ${parsed.seeds.length === 1 ? 'color is' : parsed.seeds.length + ' colors are'} locked in. Reroll fills in the rest.`;
+    hint.classList.remove('warn');
+  } else {
+    hint.textContent = 'Leave empty for a fully random palette. Hex codes and words both work.';
+    hint.classList.remove('warn');
+  }
+  renderPalette();
+}
+
+function reroll() {
+  const anchors = anchorsFromLocked();
+  const moodKey = lastParse.moods.length ? lastParse.moods[lastParse.moods.length - 1] : null;
+  const keepTitle = anchors.length ? palette.title : null;
+  palette = generate({ count, type: settings.type, anchors, moodKey, mods: lastParse.mods });
+  if (keepTitle) palette.title = keepTitle;
+  renderPalette();
+}
+
+function setCount(n) {
+  count = clamp(n, MIN, MAX);
+  renderCount();
+  // keep locked shades, refill the rest at the new size
+  const anchors = anchorsFromLocked().slice(0, count);
+  const title = palette && anchors.length ? palette.title : null;
+  const moodKey = lastParse.moods.length ? lastParse.moods[lastParse.moods.length - 1] : null;
+  palette = generate({ count, type: settings.type, anchors, moodKey, mods: lastParse.mods });
+  if (title) palette.title = title;
+  renderPalette();
+}
+
+function paletteText(p) {
+  return p.title + '\n' + p.swatches.map(s => `${s.role ? ROLES[s.role].label + ': ' : ''}${nameColor(s.hex)} ${s.hex}`).join('\n');
+}
+
+function renderSaved() {
+  const list = $('savedList');
+  if (!saved.length) { list.innerHTML = '<li><p class="empty">Nothing saved yet. Tap Save on a palette you like and it stays on this device.</p></li>'; return; }
+  list.innerHTML = saved.map(p => `<li class="saved-item">
+    <button class="saved-open" data-id="${p.id}" aria-label="Open ${esc(p.title)}">
+      <span class="strip">${p.swatches.map(s => `<i style="--c:${s.hex}"></i>`).join('')}</span>
+      <span class="saved-meta"><b>${esc(p.title)}</b> · ${p.swatches.length} shades · ${new Date(p.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+    </button>
+    <button class="del" data-del="${p.id}">Delete</button>
+  </li>`).join('');
+}
+
+/* ---------- events ---------- */
+$('composer').addEventListener('submit', e => { e.preventDefault(); $('seed').blur(); newFromInput(); });
+document.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => { $('seed').value = b.dataset.ex; newFromInput(); }));
+$('minus').addEventListener('click', () => setCount(count - 1));
+$('plus').addEventListener('click', () => setCount(count + 1));
+$('reroll').addEventListener('click', reroll);
+
+$('pans').addEventListener('click', e => {
+  const hex = e.target.closest('[data-hex]');
+  if (hex) { copy(hex.dataset.hex, hex.dataset.hex + ' copied'); return; }
+  const pan = e.target.closest('.pan');
+  if (pan) {
+    const s = palette.swatches[+pan.dataset.i];
+    s.locked = !s.locked;
+    renderPalette();
+    const again = document.querySelector(`.pan[data-i="${pan.dataset.i}"]`); if (again) again.focus();
+  }
+});
+
+$('save').addEventListener('click', () => {
+  const entry = { id: Date.now().toString(36), at: Date.now(), title: palette.title,
+    swatches: palette.swatches.map(s => ({ role: s.role, hex: s.hex })) };
+  saved.unshift(entry); saved = saved.slice(0, 60); store.set('saved', saved); renderSaved(); toast('Saved');
+});
+$('copyAll').addEventListener('click', () => copy(paletteText(palette), 'Palette copied'));
+
+$('savedList').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!del.classList.contains('armed')) {
+      del.classList.add('armed'); del.textContent = 'Tap to confirm';
+      setTimeout(() => { if (del.isConnected) { del.classList.remove('armed'); del.textContent = 'Delete'; } }, 3000);
+      return;
+    }
+    saved = saved.filter(p => p.id !== del.dataset.del); store.set('saved', saved); renderSaved(); toast('Deleted');
+    return;
+  }
+  const open = e.target.closest('[data-id]');
+  if (open) {
+    const p = saved.find(x => x.id === open.dataset.id); if (!p) return;
+    palette = { title: p.title, swatches: p.swatches.map(s => ({ ...s, locked: false, src: null })) };
+    count = p.swatches.length; renderCount(); renderPalette();
+    lastParse = { mods: [], moods: [] };
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast('Opened ' + p.title);
+  }
+});
+
+// settings
+const dlg = $('settings');
+function renderSettings() {
+  $('defCount').textContent = settings.defaultCount;
+  $('defMinus').disabled = settings.defaultCount <= MIN; $('defPlus').disabled = settings.defaultCount >= MAX;
+  document.querySelectorAll('[data-type]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.type === settings.type)));
+  document.querySelectorAll('[data-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.style === settings.style)));
+  $('typeSet').hidden = settings.style !== 'wearable';
+}
+function saveSettings() { store.set('settings', settings); }
+$('openSettings').addEventListener('click', () => { renderSettings(); dlg.showModal(); });
+$('defMinus').addEventListener('click', () => { settings.defaultCount = clamp(settings.defaultCount - 1, MIN, MAX); saveSettings(); renderSettings(); });
+$('defPlus').addEventListener('click', () => { settings.defaultCount = clamp(settings.defaultCount + 1, MIN, MAX); saveSettings(); renderSettings(); });
+document.querySelectorAll('[data-style]').forEach(b => b.addEventListener('click', () => {
+  settings.style = b.dataset.style; saveSettings(); renderSettings();
+}));
+document.querySelectorAll('[data-type]').forEach(b => b.addEventListener('click', () => {
+  settings.type = b.dataset.type; saveSettings(); renderSettings();
+}));
+let settingsBefore = null;
+$('openSettings').addEventListener('click', () => { settingsBefore = JSON.stringify(settings); });
+dlg.addEventListener('close', () => {
+  if (settingsBefore !== JSON.stringify(settings)) {
+    count = settings.defaultCount; renderCount();
+    const anchors = anchorsFromLocked().slice(0, count);
+    const title = anchors.length ? palette.title : null;
+    palette = generate({ count, type: settings.type, anchors, moodKey: lastParse.moods.slice(-1)[0] || null, mods: lastParse.mods });
+    if (title) palette.title = title;
+    renderPalette();
+    toast('Settings saved');
+  }
+});
+dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+/* ---------- start ---------- */
+renderCount();
+palette = generate({ count, type: settings.type });
+renderPalette();
+renderSaved();
+
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|anthropic/.test(location.host)) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+window.ShadeStudio = { parseSeeds, generate, nameColor };
+})();
+</script>
+
+</body>
+</html>
