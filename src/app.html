@@ -179,6 +179,26 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
     radial-gradient(rgba(255,255,255,.85) 0.7px, transparent 1.2px) 0 0 / 7px 7px,
     radial-gradient(rgba(255,255,255,.6) 0.6px, transparent 1.1px) 3px 4px / 9px 9px;
 }
+/* Looks */
+.vibes { display: flex; flex-wrap: wrap; gap: 6px; }
+.vibes .chip { min-height: 38px; padding: 6px 14px; font-size: 14px; }
+.starring { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 6px 4px 6px; font-size: 13px; font-weight: 600; }
+.starring i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 2px var(--pan-rim); }
+.starring button { border: 0; background: transparent; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; color: var(--muted); }
+.eye { width: 100%; max-width: 360px; align-self: center; display: block; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.step { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
+.step .pan { width: 52px; max-width: 52px; }
+.step .lock { width: 24px; height: 24px; right: -6px; top: -6px; }
+.step-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.step-txt .role { font-size: 10.5px; }
+.step-txt b { font-size: 15px; font-weight: 700; }
+.step-txt b small { font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.step-txt .from { font-size: 12px; color: var(--muted); }
+.step-txt .tip { font-size: 13px; margin-top: 3px; }
+.step.face { background: transparent; border: 1px dashed var(--line); }
+.looks-case .case-foot #lookReroll { flex: 1 1 auto; justify-content: center; }
+
 .shade-big { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; }
 .shade-big .pan { width: 84px; max-width: 84px; flex: none; }
 .shade-big h2 { margin: 0 0 2px; }
@@ -201,7 +221,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
   <header>
     <div class="brand">
       <h1>Shade <em>Studio</em></h1>
-      <span>Palettes and your makeup stash</span>
+      <span>Looks from the makeup you own</span>
     </div>
     <button class="icon-btn" id="openSettings" aria-label="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -209,11 +229,45 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
   </header>
 
   <div class="tabs" role="tablist" aria-label="Sections">
-    <button type="button" role="tab" id="tabPalettes" data-view="palettes" aria-selected="true">Palettes</button>
+    <button type="button" role="tab" id="tabLooks" data-view="looks" aria-selected="true">Looks</button>
     <button type="button" role="tab" id="tabStash" data-view="stash" aria-selected="false">My stash</button>
+    <button type="button" role="tab" id="tabPalettes" data-view="palettes" aria-selected="false">Palettes</button>
   </div>
 
-  <div class="view" id="viewPalettes">
+  <div class="view" id="viewLooks">
+    <div class="composer">
+      <span class="label" id="vibeLabel">Pick a vibe</span>
+      <div class="vibes" id="vibes" role="group" aria-labelledby="vibeLabel"></div>
+      <div class="starring" id="starring" hidden></div>
+      <button class="btn primary" type="button" id="lookNew">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+        New look
+      </button>
+    </div>
+    <section class="case looks-case" aria-labelledby="lookTitle">
+      <div class="case-head">
+        <h2 id="lookTitle">Look</h2>
+        <span id="lookMeta"></span>
+      </div>
+      <div id="lookEye"></div>
+      <ol class="steps" id="lookSteps"></ol>
+      <p class="hint" id="lookHint">Tap a shade to keep it, then reroll the rest.</p>
+      <div class="case-foot">
+        <button class="btn primary" type="button" id="lookReroll">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+          Reroll unlocked
+        </button>
+        <button class="btn" type="button" id="lookSave">Save</button>
+        <button class="btn" type="button" id="lookCopy">Copy</button>
+      </div>
+    </section>
+    <section class="saved" aria-labelledby="looksSavedTitle">
+      <h2 id="looksSavedTitle">Saved looks</h2>
+      <ul class="saved-list" id="looksSaved"></ul>
+    </section>
+  </div>
+
+  <div class="view" id="viewPalettes" hidden>
   <form class="composer" id="composer" autocomplete="off">
     <div class="field">
       <label class="label" for="seed">Start from colors (optional)</label>
@@ -290,8 +344,9 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
     </div>
     <p class="shade-desc" id="shadeDesc"></p>
     <div class="dialog-actions">
-      <button class="btn" type="button" id="shadeBuild">Build a palette around it</button>
-      <button class="btn primary" value="done">Done</button>
+      <button class="btn" value="done">Close</button>
+      <button class="btn" type="button" id="shadeBuild">Palette around it</button>
+      <button class="btn primary" type="button" id="shadeLook">Build a look with it</button>
     </div>
   </form>
 </dialog>
@@ -957,8 +1012,9 @@ function renderStash() {
   }).join('');
 }
 function showView(v) {
-  $('viewPalettes').hidden = v !== 'palettes'; $('viewStash').hidden = v !== 'stash';
-  $('tabPalettes').setAttribute('aria-selected', String(v === 'palettes')); $('tabStash').setAttribute('aria-selected', String(v === 'stash'));
+  for (const [k, id] of [['looks', 'Looks'], ['stash', 'Stash'], ['palettes', 'Palettes']]) {
+    $('view' + id).hidden = v !== k; $('tab' + id).setAttribute('aria-selected', String(v === k));
+  }
   if (v === 'stash') renderStash();
   store.set('view', v);
 }
@@ -983,12 +1039,226 @@ $('shadeBuild').addEventListener('click', () => {
   toast(openShade.name + ' locked in');
 });
 
+/* ---------- looks: built from the stash ---------- */
+const EYE_CATS = ['Eyeshadow palette', 'Eyeshadow'];
+// l = lightness range the spot wants, fin = finishes that suit it
+const SLOTS = {
+  base:       { label: 'Base & brow bone', l: [78, 100], fin: ['matte'], tip: 'Sweep over the whole lid up to the brow to even everything out.' },
+  transition: { label: 'Transition',       l: [55, 80],  fin: ['matte'], tip: 'Blend just above the crease with a fluffy brush, side to side.' },
+  crease:     { label: 'Crease',           l: [30, 60],  fin: ['matte'], tip: 'Work into the socket line in small circles to add depth.' },
+  outer:      { label: 'Outer corner',     l: [0, 32],   fin: ['matte', 'metallic'], tip: 'Pat onto the outer third in a sideways V, then blend inward.' },
+  lid:        { label: 'Lid',              l: [35, 85],  fin: ['sparkle', 'metallic'], tip: 'Press onto the center of the lid with a flat brush or a fingertip.' },
+  inner:      { label: 'Inner corner',     l: [75, 100], fin: ['sparkle', 'metallic'], tip: 'Dab on the inner corner to open up the eye.' },
+  liner:      { label: 'Upper lash line',  l: [0, 25],   fin: ['matte', 'metallic'], tip: 'Push along the upper lashes with a small angled brush. Flick out for a wing.' },
+  lower:      { label: 'Lower lash line',  l: [25, 65],  fin: ['matte', 'metallic', 'sparkle'], tip: 'Smudge along the lower lashes to balance the eye.' },
+};
+const SLOT_ORDER = ['base', 'transition', 'crease', 'outer', 'lid', 'inner', 'liner', 'lower'];
+const VIBES = {
+  everyday: { name: 'Soft everyday', slots: ['base', 'crease', 'lid', 'inner'], sat: -1, over: { crease: { l: [45, 75] }, lid: { l: [65, 92] } } },
+  bright:   { name: 'Light & bright', slots: ['base', 'transition', 'lid', 'inner', 'liner'], sat: 0, over: { lid: { l: [70, 95] } } },
+  smoky:    { name: 'Smoky', slots: SLOT_ORDER, sat: 0, over: { lid: { l: [10, 50] }, crease: { l: [20, 50] }, lower: { l: [10, 45] } } },
+  pop:      { name: 'Pop of color', slots: ['base', 'transition', 'crease', 'lid', 'inner', 'liner', 'lower'], sat: 1, over: {} },
+  glam:     { name: 'Full glam', slots: SLOT_ORDER, sat: 0, over: { lid: { fin: ['sparkle'] }, inner: { fin: ['sparkle'] } } },
+};
+// one step per face category found in the stash
+const FACE_STEPS = {
+  'Foundation': { label: 'Base', tip: 'Apply from the center of the face outward.' },
+  'Concealer': { label: 'Concealer', tip: 'Tap under the eyes and on any spots, then blend the edges.' },
+  'Bronzer': { label: 'Bronzer', tip: 'Sweep in a 3 shape: temples, under the cheekbones, jawline.' },
+  'Blush': { label: 'Cheeks', tip: 'Smile, then blend from the apples of the cheeks up toward the temples.' },
+  'Highlighter': { label: 'Highlight', tip: 'Tap on the top of the cheekbones and the bridge of the nose.' },
+  'Eyeliner': { label: 'Eyeliner', tip: 'Draw as close to the lashes as you can.' },
+  'Mascara': { label: 'Mascara', tip: 'Wiggle from the roots up.' },
+  'Lip liner': { label: 'Lip liner', tip: 'Outline the lips, then fill in the corners.' },
+  'Lipstick': { label: 'Lips', tip: 'Apply from the center of the lips outward.' },
+  'Lip gloss': { label: 'Gloss', tip: 'Dab on the center of the lips.' },
+};
+const slotInfo = k => SLOTS[k] || FACE_STEPS[k.slice(4)] || { label: k, tip: '' };
+const shadeKey = sh => sh.product.id + '|' + sh.name;
+const findShade = key => allShades().find(sh => shadeKey(sh) === key);
+
+let vibe = store.get('vibe', 'surprise'), look = null, hero = null;
+let looksSaved = store.get('looks', []);
+
+function slotScore(sh, slotKey, v, ref, used, jitter = true) {
+  const def = { ...SLOTS[slotKey], ...(v.over[slotKey] || {}) }, c = hexToHsl(sh.hex);
+  let score = 0;
+  if (c.l < def.l[0]) score += (def.l[0] - c.l) * 2; else if (c.l > def.l[1]) score += (c.l - def.l[1]) * 2;
+  if (!def.fin.includes(sh.group)) score += 28;
+  if (v.sat > 0 && (slotKey === 'lid' || slotKey === 'lower')) score -= c.s * .6;
+  if (v.sat < 0) score += c.s * .3;
+  // keep colorful shades in one family (or its opposite) once the lid is chosen
+  if (ref && ref.s > 15 && c.s > 15) { const d = Math.abs(hueDiff(ref.h, c.h)); score += Math.min(d, Math.abs(180 - d)) / 4; }
+  if (used.has(shadeKey(sh))) score += 45;
+  return score + (jitter ? rand(0, 14) : 0);
+}
+
+function buildLook(keep = [], keepVibe = null) {
+  const vKey = keepVibe || (vibe === 'surprise' ? pick(Object.keys(VIBES)) : vibe), v = VIBES[vKey];
+  const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
+  const steps = eye.length ? v.slots.map(slot => ({ slot, sh: null, locked: false })) : [];
+  for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => sh.product.category === cat)) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
+  const used = new Set();
+  const put = (st, sh, locked) => { st.sh = sh; st.locked = locked; used.add(shadeKey(sh)); };
+  for (const k of keep) { const st = steps.find(x => x.slot === k.slot && !x.sh); if (st) put(st, k.sh, true); }
+  if (hero && !used.has(shadeKey(hero))) {
+    const open = steps.filter(st => !st.sh && SLOTS[st.slot]);
+    const faceSt = steps.find(st => !st.sh && st.slot === 'cat:' + hero.product.category);
+    if (faceSt) put(faceSt, hero, true);
+    else if (open.length && EYE_CATS.includes(hero.product.category)) {
+      put(open.reduce((a, b) => slotScore(hero, b.slot, v, null, used, false) < slotScore(hero, a.slot, v, null, used, false) ? b : a), hero, true);
+    }
+  }
+  const eyeSteps = steps.filter(st => SLOTS[st.slot]);
+  const lidSt = eyeSteps.find(st => st.slot === 'lid');
+  const refOf = () => { const st = (lidSt && lidSt.sh ? lidSt : eyeSteps.find(x => x.sh && hexToHsl(x.sh.hex).s > 15)); return st && st.sh ? hexToHsl(st.sh.hex) : null; };
+  for (const st of [lidSt, ...eyeSteps.filter(x => x !== lidSt)]) {
+    if (!st || st.sh) continue;
+    const ref = refOf();
+    let best = null, bs = Infinity;
+    for (const sh of eye) { const sc = slotScore(sh, st.slot, v, ref, used); if (sc < bs) { bs = sc; best = sh; } }
+    put(st, best, false);
+  }
+  const ref = refOf();
+  for (const st of steps) {
+    if (st.sh) continue;
+    const pool = shades.filter(sh => sh.product.category === st.slot.slice(4));
+    // face shades lean toward the eye color family, with some luck
+    let best = null, bs = Infinity;
+    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20); if (sc < bs) { bs = sc; best = sh; } }
+    put(st, best, false);
+  }
+  const star = hero && used.has(shadeKey(hero)) ? hero : (lidSt && lidSt.sh) || (steps[0] && steps[0].sh);
+  return { vibe: vKey, title: v.name + (star ? ' · ' + star.name : ''), steps, eyesOnly: steps.length > 0 && steps.every(st => SLOTS[st.slot]) };
+}
+
+function eyeSvg(steps) {
+  const c = {}; for (const st of steps) if (SLOTS[st.slot]) c[st.slot] = st.sh.hex;
+  const el = (k, shape) => c[k] ? shape.replace('F', c[k]) : '';
+  return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Where each shade goes on the eye">
+    <defs>
+      <filter id="lkBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+      <filter id="lkSoft"><feGaussianBlur stdDeviation="1.6"/></filter>
+      <clipPath id="lkAbove"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
+      <clipPath id="lkEye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>
+    </defs>
+    <path d="M52,40 Q150,2 266,40" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="8" stroke-linecap="round"/>
+    <g clip-path="url(#lkAbove)"><g filter="url(#lkBlur)">
+      ${el('base', '<ellipse cx="152" cy="52" rx="116" ry="30" fill="F"/>')}
+      ${el('transition', '<ellipse cx="158" cy="58" rx="106" ry="27" fill="F"/>')}
+      ${el('crease', '<ellipse cx="160" cy="64" rx="98" ry="23" fill="F"/>')}
+      ${el('lid', '<ellipse cx="146" cy="76" rx="86" ry="20" fill="F"/>')}
+      ${el('outer', '<ellipse cx="236" cy="76" rx="24" ry="22" fill="F"/>')}
+      ${el('inner', '<circle cx="60" cy="98" r="12" fill="F"/>')}
+    </g></g>
+    ${el('lower', '<path d="M60,118 Q150,158 250,104" fill="none" stroke="F" stroke-width="9" stroke-linecap="round" filter="url(#lkSoft)" opacity=".85"/>')}
+    <path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z" fill="#f6efec"/>
+    <g clip-path="url(#lkEye)"><circle cx="150" cy="98" r="27" fill="#6b5a4e"/><circle cx="150" cy="98" r="11" fill="#1c1517"/><circle cx="141" cy="89" r="5" fill="#fff" opacity=".8"/></g>
+    ${el('liner', '<path d="M48,112 Q150,40 252,100 L272,86" fill="none" stroke="F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')}
+    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>'}
+  </svg>`;
+}
+
+function renderVibes() {
+  $('vibes').innerHTML = [['surprise', 'Surprise me'], ...Object.entries(VIBES).map(([k, v]) => [k, v.name])]
+    .map(([k, label]) => `<button type="button" class="chip" data-vibe="${k}" aria-pressed="${vibe === k}">${label}</button>`).join('');
+  const st = $('starring'); st.hidden = !hero;
+  if (hero) st.innerHTML = `<i style="--c:${hero.hex}"></i>Starring ${esc(hero.name)}<button type="button" id="heroClear" aria-label="Remove ${esc(hero.name)}">×</button>`;
+}
+function renderLook() {
+  $('lookTitle').textContent = look.title;
+  const locked = look.steps.filter(s => s.locked).length;
+  $('lookMeta').textContent = look.steps.length + ' steps' + (locked ? ' · ' + locked + ' kept' : '');
+  if (!look.steps.length) {
+    $('lookEye').innerHTML = ''; $('lookSteps').innerHTML = '<li><p class="empty">Your stash is empty. Add some makeup first.</p></li>'; return;
+  }
+  $('lookEye').innerHTML = look.steps.some(s => SLOTS[s.slot]) ? eyeSvg(look.steps) : '';
+  $('lookSteps').innerHTML = look.steps.map((st, i) => {
+    const info = slotInfo(st.slot), sh = st.sh;
+    const tip = SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
+    return `<li class="step${SLOTS[st.slot] ? '' : ' face'}">
+      <button class="pan f-${sh.group}" style="--c:${sh.hex}" data-step="${i}" aria-pressed="${st.locked}" aria-label="${esc(info.label + ': ' + sh.name + (st.locked ? ', kept' : ', tap to keep'))}"><span class="lock">${LOCK_SVG}</span></button>
+      <div class="step-txt">
+        <span class="role">${i + 1} · ${esc(info.label)}</span>
+        <b>${esc(sh.name)} <small>${esc(sh.finish)}</small></b>
+        <span class="from">${esc(sh.product.brand + ' ' + sh.product.name)}</span>
+        <span class="tip">${esc(tip)}</span>
+      </div>
+    </li>`;
+  }).join('');
+  $('lookHint').textContent = look.eyesOnly
+    ? 'Tap a shade to keep it, then reroll the rest. Your stash only has eyeshadow so far, so looks cover the eyes. Cheeks and lips join in once they are added.'
+    : 'Tap a shade to keep it, then reroll the rest.';
+}
+function newLook() { look = buildLook(); renderLook(); }
+function lookText(l) {
+  return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}`).join('\n');
+}
+function renderLooksSaved() {
+  const list = $('looksSaved');
+  if (!looksSaved.length) { list.innerHTML = '<li><p class="empty">Nothing saved yet. Tap Save on a look you like and it stays on this device.</p></li>'; return; }
+  list.innerHTML = looksSaved.map(l => `<li class="saved-item">
+    <button class="saved-open" data-id="${l.id}" aria-label="Open ${esc(l.title)}">
+      <span class="strip">${l.steps.map(s => { const sh = findShade(s.key); return sh ? `<i style="--c:${sh.hex}"></i>` : ''; }).join('')}</span>
+      <span class="saved-meta"><b>${esc(l.title)}</b> · ${l.steps.length} steps · ${new Date(l.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+    </button>
+    <button class="del" data-del="${l.id}">Delete</button>
+  </li>`).join('');
+}
+
+$('vibes').addEventListener('click', e => {
+  const b = e.target.closest('[data-vibe]'); if (!b) return;
+  vibe = b.dataset.vibe; store.set('vibe', vibe); renderVibes(); newLook();
+});
+$('starring').addEventListener('click', e => { if (e.target.closest('#heroClear')) { hero = null; renderVibes(); newLook(); } });
+$('lookNew').addEventListener('click', newLook);
+$('lookReroll').addEventListener('click', () => {
+  const keep = look.steps.filter(s => s.locked).map(s => ({ slot: s.slot, sh: s.sh }));
+  const title = look.title; look = buildLook(keep, look.vibe); if (keep.length) look.title = title; renderLook();
+});
+$('lookSteps').addEventListener('click', e => {
+  const pan = e.target.closest('.pan'); if (!pan) return;
+  const st = look.steps[+pan.dataset.step]; st.locked = !st.locked; renderLook();
+  const again = document.querySelector(`.pan[data-step="${pan.dataset.step}"]`); if (again) again.focus();
+});
+$('lookSave').addEventListener('click', () => {
+  if (!look.steps.length) return;
+  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh) })) });
+  looksSaved = looksSaved.slice(0, 60); store.set('looks', looksSaved); renderLooksSaved(); toast('Look saved');
+});
+$('lookCopy').addEventListener('click', () => copy(lookText(look), 'Look copied'));
+$('looksSaved').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    if (!del.classList.contains('armed')) {
+      del.classList.add('armed'); del.textContent = 'Tap to confirm';
+      setTimeout(() => { if (del.isConnected) { del.classList.remove('armed'); del.textContent = 'Delete'; } }, 3000);
+      return;
+    }
+    looksSaved = looksSaved.filter(l => l.id !== del.dataset.del); store.set('looks', looksSaved); renderLooksSaved(); toast('Deleted');
+    return;
+  }
+  const open = e.target.closest('[data-id]');
+  if (open) {
+    const l = looksSaved.find(x => x.id === open.dataset.id); if (!l) return;
+    const steps = l.steps.map(s => ({ slot: s.slot, sh: findShade(s.key), locked: false })).filter(s => s.sh);
+    look = { vibe: VIBES[l.vibe] ? l.vibe : 'glam', title: l.title, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
+    renderLook(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Opened ' + l.title);
+  }
+});
+$('shadeLook').addEventListener('click', () => {
+  hero = allShades().find(sh => sh.name === openShade.name && sh.hex === openShade.hex) || null;
+  $('shadeDlg').close(); renderVibes(); newLook(); showView('looks');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 /* ---------- start ---------- */
 renderCount();
 palette = generate({ count, type: settings.type });
 renderPalette();
 renderSaved();
-showView(store.get('view', 'palettes') === 'stash' ? 'stash' : 'palettes');
+renderVibes(); newLook(); renderLooksSaved();
+showView('looks');
 
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|anthropic/.test(location.host)) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
