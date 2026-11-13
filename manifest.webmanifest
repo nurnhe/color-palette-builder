@@ -1,7 +1,7 @@
 {
   "name": "Shade Studio",
   "short_name": "Shades",
-  "description": "Makeup palettes on demand",
+  "description": "Looks from the makeup you own",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
