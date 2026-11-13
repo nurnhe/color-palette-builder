@@ -173,6 +173,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .product .name, .wall .name { font-size: 11.5px; }
 .fin { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .pan.f-metallic::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 55%), linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,.14)); }
+.pan.f-multi::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%), linear-gradient(135deg, rgba(120,255,190,.38), rgba(255,255,255,0) 45%, rgba(255,120,220,.34)); }
 .pan.f-sparkle::after {
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%),
@@ -771,12 +772,29 @@ const STASH = [
     { name: 'Flurry', code: '527CM', finish: 'Matte', group: 'matte', hex: '#ebe4d6', desc: 'Eggshell with a matte finish' },
     { name: 'Skift', code: '528SF', finish: 'Sparkling foiled', group: 'sparkle', hex: '#d9c2a6', desc: 'Light-medium champagne with a sparkling foiled finish' },
   ] },
+  { id: 'nd-triochrome', brand: 'Natasha Denona', name: 'Triochrome Eyeshadow Palette', category: 'Eyeshadow palette', cols: 5, shades: [
+    { name: 'Scrap', code: '', finish: 'Matte', group: 'matte', hex: '#4b4a2a', desc: 'Deep olive green with a matte finish' },
+    { name: 'Andradite', code: '', finish: 'Matte', group: 'matte', hex: '#dfe8ca', desc: 'Palest pastel green with a matte finish' },
+    { name: 'Scarab', code: '', finish: 'Multichrome', group: 'multi', hex: '#9c9a3e', desc: 'Golden green with a multichrome finish' },
+    { name: 'Ion', code: '', finish: 'Matte', group: 'matte', hex: '#d6da8c', desc: 'Light chartreuse with a matte finish' },
+    { name: 'Vert', code: '', finish: 'Matte', group: 'matte', hex: '#cfc24c', desc: 'Green-toned yellow with a matte finish' },
+    { name: 'Naga', code: '', finish: 'Matte', group: 'matte', hex: '#c3a9d6', desc: 'Lilac with a matte finish' },
+    { name: 'Manganese', code: '', finish: 'Matte', group: 'matte', hex: '#3c2339', desc: 'Deep eggplant with a matte finish' },
+    { name: 'Kinetic', code: '', finish: 'Multichrome', group: 'multi', hex: '#a9617b', desc: 'Bronzed purple-pink with a multichrome finish' },
+    { name: 'Redox', code: '', finish: 'Matte', group: 'matte', hex: '#8a8091', desc: 'Purple-toned grey with a matte finish' },
+    { name: 'Tungsten', code: '', finish: 'Matte', group: 'matte', hex: '#6f3445', desc: 'Muted wine with a matte finish' },
+    { name: 'Vertex', code: '', finish: 'Matte', group: 'matte', hex: '#ead9c3', desc: 'Cream beige with a matte finish' },
+    { name: 'Plutonium', code: '', finish: 'Matte', group: 'matte', hex: '#c9a030', desc: 'Mustard yellow with a matte finish' },
+    { name: 'Color Flip', code: '', finish: 'Multichrome', group: 'multi', hex: '#7a5d9c', desc: 'Green purple with a multichrome finish' },
+    { name: 'Garmon', code: '', finish: 'Matte', group: 'matte', hex: '#6c403d', desc: 'Deep rosy brown with a matte finish' },
+    { name: 'Diatonic', code: '', finish: 'Matte', group: 'matte', hex: '#f0c4a7', desc: 'Soft peach with a matte finish' },
+  ] },
   { id: 'rb-soft-pinch-liquid', brand: 'Rare Beauty', name: 'Soft Pinch Liquid Blush', category: 'Blush', cols: 5, shades: [
     { name: 'Joy', code: '', finish: 'Dewy', group: 'dewy', hex: '#ef8d6f', desc: 'Muted peach with a dewy finish. The orange one of the range.' },
     { name: 'Encourage', code: '', finish: 'Dewy', group: 'dewy', hex: '#e59aa0', desc: 'Soft neutral pink with a dewy finish' },
   ] },
 ];
-const GROUPS = { matte: 'Matte', dewy: 'Dewy', metallic: 'Metallic', sparkle: 'Sparkle' };
+const GROUPS = { matte: 'Matte', dewy: 'Dewy', metallic: 'Metallic', multi: 'Multichrome', sparkle: 'Sparkle' };
 
 /* ---------- storage ---------- */
 const store = {
@@ -1091,7 +1109,7 @@ function slotScore(sh, slotKey, v, ref, used, jitter = true) {
   const def = { ...SLOTS[slotKey], ...(v.over[slotKey] || {}) }, c = hexToHsl(sh.hex);
   let score = 0;
   if (c.l < def.l[0]) score += (def.l[0] - c.l) * 2; else if (c.l > def.l[1]) score += (c.l - def.l[1]) * 2;
-  if (!def.fin.includes(sh.group)) score += 28;
+  if (!def.fin.includes(sh.group === 'multi' ? 'metallic' : sh.group)) score += 28;
   if (v.sat > 0 && (slotKey === 'lid' || slotKey === 'lower')) score -= c.s * .6;
   if (v.sat < 0) score += c.s * .3;
   // keep colorful shades in one family (or its opposite) once the lid is chosen
