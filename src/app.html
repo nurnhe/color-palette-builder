@@ -811,6 +811,26 @@ const STASH = [
     { name: 'Extraction', code: '', finish: 'Matte', group: 'matte', hex: '#5b1a45', desc: 'Deep berry purple with a matte finish' },
     { name: 'Coma', code: '', finish: 'Matte', group: 'matte', hex: '#33182f', desc: 'Deep eggplant with a matte finish' },
   ] },
+  { id: 'jsc-blue-blood', brand: 'Jeffree Star Cosmetics', name: 'Blue Blood Eyeshadow Palette', category: 'Eyeshadow palette', cols: 6, shades: [
+    { name: 'Cullinan', code: '', finish: 'Metallic', group: 'metallic', hex: '#eef2f6', desc: 'Icy white, metallic finish' },
+    { name: 'Mintea', code: '', finish: 'Matte', group: 'matte', hex: '#bfe6d2', desc: 'Mint, matte finish' },
+    { name: 'Crystal Flesh', code: '', finish: 'Metallic', group: 'metallic', hex: '#ead5bd', desc: 'Champagne, metallic finish' },
+    { name: 'I\'m Cold', code: '', finish: 'Matte', group: 'matte', hex: '#bcd4ea', desc: 'Powder blue, matte finish' },
+    { name: 'Untouchable', code: '', finish: 'Matte', group: 'matte', hex: '#f2b9ad', desc: 'Peachy pink, matte finish' },
+    { name: 'Priceless', code: '', finish: 'Matte', group: 'matte', hex: '#e2b596', desc: 'Peachy nude, matte finish' },
+    { name: 'Power', code: '', finish: 'Matte', group: 'matte', hex: '#5f6b7c', desc: 'Slate grey with a blue undertone, matte finish' },
+    { name: 'Blue Blood', code: '', finish: 'Matte', group: 'matte', hex: '#8cc4ee', desc: 'Baby blue, matte finish' },
+    { name: 'Deceased', code: '', finish: 'Metallic', group: 'metallic', hex: '#2a7fd0', desc: 'Azure blue, metallic finish' },
+    { name: 'Icy Tray', code: '', finish: 'Metallic', group: 'metallic', hex: '#b4d2ea', desc: 'Pale blue, metallic finish' },
+    { name: 'Blue Monday', code: '', finish: 'Matte', group: 'matte', hex: '#1f45b8', desc: 'Cobalt blue, matte finish' },
+    { name: 'Flourishing', code: '', finish: 'Matte', group: 'matte', hex: '#12b5a6', desc: 'Neon teal, matte finish' },
+    { name: 'Wealthy', code: '', finish: 'Matte', group: 'matte', hex: '#ecd6c2', desc: 'Light nude, matte finish' },
+    { name: 'Celebrity Skin', code: '', finish: 'Matte', group: 'matte', hex: '#a57c62', desc: 'Soft brown, matte finish' },
+    { name: 'Entitled', code: '', finish: 'Metallic', group: 'metallic', hex: '#1f8a8c', desc: 'Teal with glitter reflects, metallic finish' },
+    { name: 'Ocean Ice', code: '', finish: 'Metallic', group: 'metallic', hex: '#1c3f9c', desc: 'Sapphire with glitter reflects, metallic finish' },
+    { name: 'Cremated', code: '', finish: 'Matte', group: 'matte', hex: '#7d8f86', desc: 'Cool green with grey undertones, matte finish' },
+    { name: 'Undertaker', code: '', finish: 'Matte', group: 'matte', hex: '#16224a', desc: 'Deep blue, matte finish' },
+  ] },
   { id: 'rb-soft-pinch-liquid', brand: 'Rare Beauty', name: 'Soft Pinch Liquid Blush', category: 'Blush', cols: 5, shades: [
     { name: 'Joy', code: '', finish: 'Dewy', group: 'dewy', hex: '#ef8d6f', desc: 'Muted peach with a dewy finish. The orange one of the range.' },
     { name: 'Encourage', code: '', finish: 'Dewy', group: 'dewy', hex: '#e59aa0', desc: 'Soft neutral pink with a dewy finish' },
@@ -1135,7 +1155,10 @@ function slotScore(sh, slotKey, v, ref, used, jitter = true) {
   if (v.sat > 0 && (slotKey === 'lid' || slotKey === 'lower')) score -= c.s * .6;
   if (v.sat < 0) score += c.s * .3;
   // keep colorful shades in one family (or its opposite) once the lid is chosen
-  if (ref && ref.s > 15 && c.s > 15) { const d = Math.abs(hueDiff(ref.h, c.h)); score += Math.min(d, Math.abs(180 - d)) / 4; }
+  if (ref && c.s > 15) {
+    if (ref.s > 15) { const d = Math.abs(hueDiff(ref.h, c.h)); score += Math.min(d, Math.abs(180 - d)) / 2; }
+    else if (!(v.sat > 0 && slotKey === 'lower')) score += c.s * .35; // a neutral lid keeps the rest neutral
+  }
   if (used.has(shadeKey(sh))) score += 45;
   return score + (jitter ? rand(0, 14) : 0);
 }
