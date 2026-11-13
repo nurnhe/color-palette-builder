@@ -188,6 +188,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .product .name, .wall .name { font-size: 11.5px; }
 .fin { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .pan.f-metallic::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 55%), linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,.14)); }
+.pan.f-multi::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%), linear-gradient(135deg, rgba(120,255,190,.38), rgba(255,255,255,0) 45%, rgba(255,120,220,.34)); }
 .pan.f-sparkle::after {
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%),
@@ -200,7 +201,10 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .starring { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 6px 4px 6px; font-size: 13px; font-weight: 600; }
 .starring i { width: 22px; height: 22px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 2px var(--pan-rim); }
 .starring button { border: 0; background: transparent; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; color: var(--muted); }
-.eye { width: 100%; max-width: 360px; align-self: center; display: block; }
+#lookEye { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.face { width: 100%; max-width: 300px; display: block; }
+.eye { width: 100%; max-width: 280px; display: block; }
+.fig-cap { margin-top: 6px; }
 .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .step { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
 .step .pan { width: 52px; max-width: 52px; }
@@ -785,12 +789,29 @@ const STASH = [
     { name: 'Flurry', code: '527CM', finish: 'Matte', group: 'matte', hex: '#ebe4d6', desc: 'Eggshell with a matte finish' },
     { name: 'Skift', code: '528SF', finish: 'Sparkling foiled', group: 'sparkle', hex: '#d9c2a6', desc: 'Light-medium champagne with a sparkling foiled finish' },
   ] },
+  { id: 'nd-triochrome', brand: 'Natasha Denona', name: 'Triochrome Eyeshadow Palette', category: 'Eyeshadow palette', cols: 5, shades: [
+    { name: 'Scrap', code: '', finish: 'Matte', group: 'matte', hex: '#4b4a2a', desc: 'Deep olive green with a matte finish' },
+    { name: 'Andradite', code: '', finish: 'Matte', group: 'matte', hex: '#dfe8ca', desc: 'Palest pastel green with a matte finish' },
+    { name: 'Scarab', code: '', finish: 'Multichrome', group: 'multi', hex: '#9c9a3e', desc: 'Golden green with a multichrome finish' },
+    { name: 'Ion', code: '', finish: 'Matte', group: 'matte', hex: '#d6da8c', desc: 'Light chartreuse with a matte finish' },
+    { name: 'Vert', code: '', finish: 'Matte', group: 'matte', hex: '#cfc24c', desc: 'Green-toned yellow with a matte finish' },
+    { name: 'Naga', code: '', finish: 'Matte', group: 'matte', hex: '#c3a9d6', desc: 'Lilac with a matte finish' },
+    { name: 'Manganese', code: '', finish: 'Matte', group: 'matte', hex: '#3c2339', desc: 'Deep eggplant with a matte finish' },
+    { name: 'Kinetic', code: '', finish: 'Multichrome', group: 'multi', hex: '#a9617b', desc: 'Bronzed purple-pink with a multichrome finish' },
+    { name: 'Redox', code: '', finish: 'Matte', group: 'matte', hex: '#8a8091', desc: 'Purple-toned grey with a matte finish' },
+    { name: 'Tungsten', code: '', finish: 'Matte', group: 'matte', hex: '#6f3445', desc: 'Muted wine with a matte finish' },
+    { name: 'Vertex', code: '', finish: 'Matte', group: 'matte', hex: '#ead9c3', desc: 'Cream beige with a matte finish' },
+    { name: 'Plutonium', code: '', finish: 'Matte', group: 'matte', hex: '#c9a030', desc: 'Mustard yellow with a matte finish' },
+    { name: 'Color Flip', code: '', finish: 'Multichrome', group: 'multi', hex: '#7a5d9c', desc: 'Green purple with a multichrome finish' },
+    { name: 'Garmon', code: '', finish: 'Matte', group: 'matte', hex: '#6c403d', desc: 'Deep rosy brown with a matte finish' },
+    { name: 'Diatonic', code: '', finish: 'Matte', group: 'matte', hex: '#f0c4a7', desc: 'Soft peach with a matte finish' },
+  ] },
   { id: 'rb-soft-pinch-liquid', brand: 'Rare Beauty', name: 'Soft Pinch Liquid Blush', category: 'Blush', cols: 5, shades: [
     { name: 'Joy', code: '', finish: 'Dewy', group: 'dewy', hex: '#ef8d6f', desc: 'Muted peach with a dewy finish. The orange one of the range.' },
     { name: 'Encourage', code: '', finish: 'Dewy', group: 'dewy', hex: '#e59aa0', desc: 'Soft neutral pink with a dewy finish' },
   ] },
 ];
-const GROUPS = { matte: 'Matte', dewy: 'Dewy', metallic: 'Metallic', sparkle: 'Sparkle' };
+const GROUPS = { matte: 'Matte', dewy: 'Dewy', metallic: 'Metallic', multi: 'Multichrome', sparkle: 'Sparkle' };
 
 /* ---------- storage ---------- */
 const store = {
@@ -1105,7 +1126,7 @@ function slotScore(sh, slotKey, v, ref, used, jitter = true) {
   const def = { ...SLOTS[slotKey], ...(v.over[slotKey] || {}) }, c = hexToHsl(sh.hex);
   let score = 0;
   if (c.l < def.l[0]) score += (def.l[0] - c.l) * 2; else if (c.l > def.l[1]) score += (c.l - def.l[1]) * 2;
-  if (!def.fin.includes(sh.group)) score += 28;
+  if (!def.fin.includes(sh.group === 'multi' ? 'metallic' : sh.group)) score += 28;
   if (v.sat > 0 && (slotKey === 'lid' || slotKey === 'lower')) score -= c.s * .6;
   if (v.sat < 0) score += c.s * .3;
   // keep colorful shades in one family (or its opposite) once the lid is chosen
@@ -1153,18 +1174,17 @@ function buildLook(keep = [], keepVibe = null) {
   return { vibe: vKey, title: v.name + (star ? ' · ' + star.name : ''), steps, eyesOnly: steps.length > 0 && steps.every(st => SLOTS[st.slot]) };
 }
 
-function eyeSvg(steps) {
-  const c = {}; for (const st of steps) if (SLOTS[st.slot]) c[st.slot] = st.sh.hex;
+// eye artwork in a 300x170 box; reused as the close-up and, scaled down, on the face
+function eyeDefs(id) {
+  return `<filter id="${id}Blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
+      <filter id="${id}Soft"><feGaussianBlur stdDeviation="1.6"/></filter>
+      <clipPath id="${id}Above"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
+      <clipPath id="${id}Eye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>`;
+}
+function eyeArt(c, id) {
   const el = (k, shape) => c[k] ? shape.replace('F', c[k]) : '';
-  return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Where each shade goes on the eye">
-    <defs>
-      <filter id="lkBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
-      <filter id="lkSoft"><feGaussianBlur stdDeviation="1.6"/></filter>
-      <clipPath id="lkAbove"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
-      <clipPath id="lkEye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>
-    </defs>
-    <path d="M52,40 Q150,2 266,40" fill="none" stroke="currentColor" stroke-opacity=".32" stroke-width="8" stroke-linecap="round"/>
-    <g clip-path="url(#lkAbove)"><g filter="url(#lkBlur)">
+  return `<path d="M52,40 Q150,2 266,40" fill="none" stroke="#5a4640" stroke-opacity=".55" stroke-width="8" stroke-linecap="round"/>
+    <g clip-path="url(#${id}Above)"><g filter="url(#${id}Blur)">
       ${el('base', '<ellipse cx="152" cy="52" rx="116" ry="30" fill="F"/>')}
       ${el('transition', '<ellipse cx="158" cy="58" rx="106" ry="27" fill="F"/>')}
       ${el('crease', '<ellipse cx="160" cy="64" rx="98" ry="23" fill="F"/>')}
@@ -1172,11 +1192,50 @@ function eyeSvg(steps) {
       ${el('outer', '<ellipse cx="236" cy="76" rx="24" ry="22" fill="F"/>')}
       ${el('inner', '<circle cx="60" cy="98" r="12" fill="F"/>')}
     </g></g>
-    ${el('lower', '<path d="M60,118 Q150,158 250,104" fill="none" stroke="F" stroke-width="9" stroke-linecap="round" filter="url(#lkSoft)" opacity=".85"/>')}
+    ${el('lower', `<path d="M60,118 Q150,158 250,104" fill="none" stroke="F" stroke-width="9" stroke-linecap="round" filter="url(#${id}Soft)" opacity=".85"/>`)}
     <path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z" fill="#f6efec"/>
-    <g clip-path="url(#lkEye)"><circle cx="150" cy="98" r="27" fill="#6b5a4e"/><circle cx="150" cy="98" r="11" fill="#1c1517"/><circle cx="141" cy="89" r="5" fill="#fff" opacity=".8"/></g>
+    <g clip-path="url(#${id}Eye)"><circle cx="150" cy="98" r="27" fill="#6b5a4e"/><circle cx="150" cy="98" r="11" fill="#1c1517"/><circle cx="141" cy="89" r="5" fill="#fff" opacity=".8"/></g>
     ${el('liner', '<path d="M48,112 Q150,40 252,100 L272,86" fill="none" stroke="F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')}
-    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="currentColor" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>'}
+    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="#3a2c28" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round"/>'}`;
+}
+function lookColors(steps) {
+  const c = {}; for (const st of steps) c[SLOTS[st.slot] ? st.slot : st.slot.slice(4)] = st.sh.hex; return c;
+}
+function eyeSvg(steps) {
+  return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Close-up: where each shade goes on the eye">
+    <defs>${eyeDefs('lk')}</defs>
+    <ellipse cx="150" cy="85" rx="146" ry="82" fill="#f0d8c9"/>
+    ${eyeArt(lookColors(steps), 'lk')}
+  </svg>`;
+}
+// whole face: both eyes, cheeks, lips and anything else the look uses
+function faceSvg(steps) {
+  const c = lookColors(steps);
+  const both = (k, f) => c[k] ? f(c[k], 1) + f(c[k], -1) : '';
+  const x = (side, dx) => 150 + side * dx;
+  const lip = c['Lipstick'] || c['Lip gloss'];
+  return `<svg class="face" viewBox="0 0 300 330" role="img" aria-label="The whole look on a face">
+    <defs>${eyeDefs('fc')}
+      <filter id="fcCheek" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="fcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+      <clipPath id="fcFace"><path d="M150,14 C226,14 264,72 260,150 C257,228 216,304 150,316 C84,304 43,228 40,150 C36,72 74,14 150,14 Z"/></clipPath>
+    </defs>
+    <path d="M150,14 C226,14 264,72 260,150 C257,228 216,304 150,316 C84,304 43,228 40,150 C36,72 74,14 150,14 Z" fill="${c['Foundation'] || '#f0d8c9'}"/>
+    <g clip-path="url(#fcFace)">
+      ${both('Bronzer', (h, s) => `<ellipse cx="${x(s, 78)}" cy="222" rx="30" ry="11" transform="rotate(${-s * 28} ${x(s, 78)} 222)" fill="${h}" opacity=".55" filter="url(#fcCheek)"/><ellipse cx="${x(s, 92)}" cy="70" rx="22" ry="16" fill="${h}" opacity=".4" filter="url(#fcCheek)"/>`)}
+      ${both('Blush', (h, s) => `<ellipse cx="${x(s, 66)}" cy="198" rx="30" ry="19" transform="rotate(${-s * 18} ${x(s, 66)} 198)" fill="${h}" opacity=".78" filter="url(#fcCheek)"/>`)}
+      ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 78)}" cy="176" rx="20" ry="6" transform="rotate(${-s * 22} ${x(s, 78)} 176)" fill="${h}" opacity=".8" filter="url(#fcGlow)"/>`)}
+      ${c['Highlighter'] ? `<ellipse cx="150" cy="186" rx="4" ry="22" fill="${c['Highlighter']}" opacity=".7" filter="url(#fcGlow)"/>` : ''}
+    </g>
+    <g transform="translate(164,112) scale(.31)">${eyeArt(c, 'fc')}</g>
+    <g transform="translate(136,112) scale(-.31,.31)">${eyeArt(c, 'fc')}</g>
+    <path d="M141,222 Q150,230 159,222" fill="none" stroke="#b08f80" stroke-width="2.5" stroke-linecap="round"/>
+    <g ${lip ? '' : 'opacity=".75"'}>
+      <path d="M120,262 Q136,250 150,256 Q164,250 180,262 Q150,268 120,262 Z" fill="${lip || '#cf9c94'}"/>
+      <path d="M120,262 Q150,268 180,262 Q150,292 120,262 Z" fill="${lip || '#d8a8a0'}"/>
+      <path d="M120,262 Q150,268 180,262" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.5"/>
+      ${c['Lip gloss'] ? '<ellipse cx="150" cy="274" rx="12" ry="3.5" fill="#fff" opacity=".45"/>' : ''}
+    </g>
   </svg>`;
 }
 
@@ -1193,7 +1252,7 @@ function renderLook() {
   if (!look.steps.length) {
     $('lookEye').innerHTML = ''; $('lookSteps').innerHTML = '<li><p class="empty">Your stash is empty. Add some makeup first.</p></li>'; return;
   }
-  $('lookEye').innerHTML = look.steps.some(s => SLOTS[s.slot]) ? eyeSvg(look.steps) : '';
+  $('lookEye').innerHTML = faceSvg(look.steps) + (look.steps.some(s => SLOTS[s.slot]) ? '<span class="label fig-cap">Eye close-up</span>' + eyeSvg(look.steps) : '');
   $('lookSteps').innerHTML = look.steps.map((st, i) => {
     const info = slotInfo(st.slot), sh = st.sh;
     const tip = SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
@@ -1208,7 +1267,7 @@ function renderLook() {
     </li>`;
   }).join('');
   $('lookHint').textContent = look.eyesOnly
-    ? 'Tap a shade to keep it, then reroll the rest. Your stash only has eyeshadow so far, so looks cover the eyes. Cheeks and lips join in once they are added.'
+    ? 'Tap a shade to keep it, then reroll the rest. Your stash only has eyeshadow so far, so only the eyes are made up.'
     : 'Tap a shade to keep it, then reroll the rest.';
 }
 function newLook() { look = buildLook(); renderLook(); }
