@@ -186,6 +186,8 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .wall { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 14px 6px; }
 .product .pan, .wall .pan { max-width: 64px; }
 .product .name, .wall .name { font-size: 11.5px; }
+.product .name { hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; }
+.product .pans[style*="--cols:6"] .name { font-size: 10.5px; }
 .fin { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .pan.f-metallic::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 55%), linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,.14)); }
 .pan.f-multi::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%), linear-gradient(135deg, rgba(120,255,190,.38), rgba(255,255,255,0) 45%, rgba(255,120,220,.34)); }
@@ -806,6 +808,26 @@ const STASH = [
     { name: 'Garmon', code: '', finish: 'Matte', group: 'matte', hex: '#6c403d', desc: 'Deep rosy brown with a matte finish' },
     { name: 'Diatonic', code: '', finish: 'Matte', group: 'matte', hex: '#f0c4a7', desc: 'Soft peach with a matte finish' },
   ] },
+  { id: 'jsc-blood-sugar', brand: 'Jeffree Star Cosmetics', name: 'Blood Sugar Eyeshadow Palette', category: 'Eyeshadow palette', cols: 6, shades: [
+    { name: 'Glucose', code: '', finish: 'Matte', group: 'matte', hex: '#f6f3ee', desc: 'Bright white with a matte finish' },
+    { name: 'Sugarcane', code: '', finish: 'Matte', group: 'matte', hex: '#f4c9cf', desc: 'Powder pink with a matte finish' },
+    { name: 'Cake Mix', code: '', finish: 'Matte', group: 'matte', hex: '#d9a27c', desc: 'Soft orange brown with a matte finish' },
+    { name: 'Ouch', code: '', finish: 'Matte', group: 'matte', hex: '#c2924f', desc: 'Camel yellow brown with a matte finish' },
+    { name: 'Donor', code: '', finish: 'Metallic', group: 'metallic', hex: '#a8783c', desc: 'Golden bronze with a metallic finish' },
+    { name: 'Intravenous', code: '', finish: 'Matte', group: 'matte', hex: '#5a2420', desc: 'Dark red brown with a matte finish' },
+    { name: 'Candy Floss', code: '', finish: 'Metallic', group: 'metallic', hex: '#dcaedb', desc: 'Pinky lilac with a metallic finish' },
+    { name: 'Tongue Pop', code: '', finish: 'Matte', group: 'matte', hex: '#f28a80', desc: 'Salmon pink with a matte finish' },
+    { name: 'Sweetener', code: '', finish: 'Metallic', group: 'metallic', hex: '#eeb49a', desc: 'Peachy pink gold with a metallic finish' },
+    { name: 'Cavity', code: '', finish: 'Matte', group: 'matte', hex: '#f0308a', desc: 'Neon pink with a matte finish' },
+    { name: 'O Positive', code: '', finish: 'Matte', group: 'matte', hex: '#a76a80', desc: 'Mauve with a matte finish' },
+    { name: 'Root Canal', code: '', finish: 'Matte', group: 'matte', hex: '#b01e5c', desc: 'Bright purple red with a matte finish' },
+    { name: 'Prick', code: '', finish: 'Matte', group: 'matte', hex: '#e8402a', desc: 'Bright red orange with a matte finish' },
+    { name: 'Cherry Soda', code: '', finish: 'Matte', group: 'matte', hex: '#c8161d', desc: 'True red with a matte finish' },
+    { name: 'Fresh Meat', code: '', finish: 'Matte', group: 'matte', hex: '#9c1c38', desc: 'Berry red with a matte finish' },
+    { name: 'Blood Sugar', code: '', finish: 'Metallic', group: 'metallic', hex: '#a5382c', desc: 'Copper red with a metallic finish' },
+    { name: 'Extraction', code: '', finish: 'Matte', group: 'matte', hex: '#5b1a45', desc: 'Deep berry purple with a matte finish' },
+    { name: 'Coma', code: '', finish: 'Matte', group: 'matte', hex: '#33182f', desc: 'Deep eggplant with a matte finish' },
+  ] },
   { id: 'rb-soft-pinch-liquid', brand: 'Rare Beauty', name: 'Soft Pinch Liquid Blush', category: 'Blush', cols: 5, shades: [
     { name: 'Joy', code: '', finish: 'Dewy', group: 'dewy', hex: '#ef8d6f', desc: 'Muted peach with a dewy finish. The orange one of the range.' },
     { name: 'Encourage', code: '', finish: 'Dewy', group: 'dewy', hex: '#e59aa0', desc: 'Soft neutral pink with a dewy finish' },
@@ -1022,7 +1044,7 @@ const allShades = () => STASH.flatMap(p => p.shades.map(sh => ({ ...sh, product:
 function panHtml(sh, pid, i) {
   return `<div class="shade">
     <button class="pan f-${sh.group}" style="--c:${sh.hex}" data-p="${pid}" data-s="${i}" aria-label="${esc(sh.name + ', ' + sh.finish)}"></button>
-    <span class="name">${esc(sh.name)}</span>
+    <span class="name" lang="en">${esc(sh.name)}</span>
     <span class="fin">${esc(sh.finish)}</span>
   </div>`;
 }
