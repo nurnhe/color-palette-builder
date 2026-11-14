@@ -179,6 +179,9 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .view { display: flex; flex-direction: column; gap: 22px; }
 .tabs { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 3px; background: var(--surface); }
 .tabs button { flex: 1; border: 0; background: transparent; border-radius: 999px; min-height: 42px; font-weight: 600; color: var(--muted); }
+.tabs button.more { flex: 0 0 auto; padding: 0 18px; font-weight: 500; font-size: 14px; }
+.more-head h2 { margin: 2px 0 4px; font-family: var(--font-display); font-weight: 500; font-size: 26px; }
+.more-head .hint { margin: 0; }
 .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-fg); }
 .stash-head { display: flex; flex-direction: column; gap: 10px; }
 .stash-head h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 22px; }
@@ -289,7 +292,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
   <div class="tabs" role="tablist" aria-label="Sections">
     <button type="button" role="tab" id="tabLooks" data-view="looks" aria-selected="true">Looks</button>
     <button type="button" role="tab" id="tabStash" data-view="stash" aria-selected="false">My stash</button>
-    <button type="button" role="tab" id="tabPalettes" data-view="palettes" aria-selected="false">Palettes</button>
+    <button type="button" role="tab" id="tabPalettes" class="more" data-view="palettes" aria-selected="false">More</button>
   </div>
 
   <div class="view" id="viewLooks">
@@ -327,6 +330,11 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
   </div>
 
   <div class="view" id="viewPalettes" hidden>
+    <div class="more-head">
+      <span class="label">More</span>
+      <h2>Color palettes</h2>
+      <p class="hint">Random color combinations for inspiration. They are not tied to your stash.</p>
+    </div>
   <form class="composer" id="composer" autocomplete="off">
     <div class="field">
       <label class="label" for="seed">Start from colors (optional)</label>
