@@ -251,9 +251,17 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .eye { width: 100%; max-width: 280px; display: block; }
 .fig-cap { margin-top: 6px; }
 .steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.step { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
+.step { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; background: var(--surface); border-radius: var(--r); padding: 10px 12px; }
 .step .pan { width: 52px; max-width: 52px; }
 .step .lock { width: 24px; height: 24px; right: -6px; top: -6px; }
+.step-edit { border: 1px solid var(--line); background: none; color: var(--accent); font: inherit; font-weight: 600; font-size: 13px; padding: 7px 11px; border-radius: 999px; align-self: start; }
+.step-add { width: 100%; margin-top: 10px; }
+#stepDlg { width: min(560px, 96vw); max-height: 94dvh; overflow: auto; }
+#stepKinds { margin: 4px 0 12px; }
+#stepSearch { width: 100%; box-sizing: border-box; font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); margin-bottom: 10px; }
+#stepDesign { width: 100%; font: inherit; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); margin: 2px 0 12px; }
+#stepPans { max-height: 44dvh; overflow: auto; padding: 6px 4px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 14px; }
+#stepPans .pan[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 3px; }
 .step-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .step-txt .role { font-size: 10.5px; }
 .step-txt b { font-size: 15px; font-weight: 700; }
@@ -321,6 +329,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
       </div>
       <div id="lookEye"></div>
       <ol class="steps" id="lookSteps"></ol>
+      <button class="btn step-add" type="button" id="stepAdd">Add a step</button>
       <p class="hint" id="lookHint">Tap a shade to keep it, then reroll the rest.</p>
       <div class="case-foot">
         <button class="btn primary" type="button" id="lookReroll">
@@ -425,6 +434,22 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
   <div class="dialog-actions">
     <button class="btn" type="button" id="photoCancel">Cancel</button>
     <button class="btn primary" type="button" id="photoMake">Make face chart</button>
+  </div>
+</dialog>
+
+<dialog id="stepDlg" aria-labelledby="stepTitle">
+  <h2 id="stepTitle">Edit step</h2>
+  <p class="hint" id="stepHint"></p>
+  <div class="filters" id="stepKinds" role="group" aria-label="Step to add"></div>
+  <div id="stepBody">
+    <label class="label" for="stepDesign" id="stepDesignLabel">Design</label>
+    <select id="stepDesign"></select>
+    <input type="search" id="stepSearch" placeholder="Search your shades" aria-label="Search your shades">
+    <div class="pans wall" id="stepPans"></div>
+  </div>
+  <div class="dialog-actions">
+    <button class="btn" type="button" id="stepRemove">Remove step</button>
+    <button class="btn primary" type="button" id="stepDone">Done</button>
   </div>
 </dialog>
 
@@ -1535,6 +1560,7 @@ const snap = sh => ({ name: sh.name, finish: sh.finish, group: sh.group, hex: sh
 const savedShade = s => findShade(s.key) || (s.snap ? { name: s.snap.name, code: '', finish: s.snap.finish, group: s.snap.group, hex: s.snap.hex, desc: '',
   product: { id: s.key.split('|')[0], brand: s.snap.brand, name: s.snap.product, category: s.snap.category } } : null);
 const lookSig = steps => steps.map(s => s.slot + '=' + (s.key || shadeKey(s.sh))).join(',');
+const packSteps = steps => steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh), ...(s.place ? { place: s.place } : {}) }));
 const savedMatch = () => look && looksSaved.find(l => lookSig(l.steps) === lookSig(look.steps));
 
 let vibe = store.get('vibe', 'surprise'), look = null, hero = null;
@@ -1707,12 +1733,13 @@ function renderLook() {
         <span class="from">${esc(sh.product.brand + ' ' + sh.product.name)}</span>
         <span class="tip">${esc(tip)}</span>
       </div>
+      <button type="button" class="step-edit" data-edit="${i}" aria-label="Edit ${esc(info.label)}">Edit</button>
     </li>`;
   }).join('');
   renderFav();
   $('lookHint').textContent = look.eyesOnly
-    ? 'Tap a shade to keep it, then reroll the rest. Your stash only has eyeshadow so far, so only the eyes are made up.'
-    : 'Tap a shade to keep it, then reroll the rest.';
+    ? 'Tap a shade to keep it, then reroll the rest. Tap Edit to change a step. Your stash only has eyeshadow so far, so only the eyes are made up.'
+    : 'Tap a shade to keep it, then reroll the rest. Tap Edit to change a step.';
 }
 function renderFav() {
   const on = !!savedMatch(), n = looksSaved.length;
@@ -1747,6 +1774,7 @@ $('lookReroll').addEventListener('click', () => {
   const title = look.title; look = buildLook(keep, look.vibe); if (keep.length) look.title = title; renderLook();
 });
 $('lookSteps').addEventListener('click', e => {
+  const edit = e.target.closest('[data-edit]'); if (edit) return stepOpen(+edit.dataset.edit);
   const pan = e.target.closest('.pan'); if (!pan) return;
   const st = look.steps[+pan.dataset.step]; st.locked = !st.locked; renderLook();
   const again = document.querySelector(`.pan[data-step="${pan.dataset.step}"]`); if (again) again.focus();
@@ -1755,7 +1783,7 @@ $('lookSave').addEventListener('click', () => {
   if (!look.steps.length) return;
   const had = savedMatch();
   if (had) { looksSaved = looksSaved.filter(l => l !== had); store.set('looks', looksSaved); renderLooksSaved(); toast('Removed from favorites'); return; }
-  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh), ...(s.place ? { place: s.place } : {}) })) });
+  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: packSteps(look.steps) });
   looksSaved = looksSaved.slice(0, 100); store.set('looks', looksSaved); renderLooksSaved(); toast('Added to favorites');
 });
 $('favsLink').addEventListener('click', () => $('looksSavedTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1931,6 +1959,54 @@ $('photoMake').addEventListener('click', () => {
   $('photoDlg').close(); showView('looks'); renderLook();
   $('lookTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('Face chart made. Tap Favorite to keep it.');
 });
+
+// ---- edit the steps of a look by hand; the face chart redraws on every change ----
+const ALL_STEPS = [...SLOT_ORDER, ...Object.keys(FACE_STEPS).map(c => 'cat:' + c)];
+const stepPool = slot => allShades().filter(sh => SLOTS[slot] ? EYE_CATS.includes(sh.product.category) : inCat(sh, slot.slice(4)));
+const stepDesigns = slot => slot === 'cat:Rhinestones' ? RH_PLACES : slot === 'cat:Graphic liner' ? GR_STYLES : null;
+const ed = { i: -1, slot: null };
+// a favorite that matched before the change follows the edit
+function lookChange(fn) {
+  const had = savedMatch(); fn();
+  look.eyesOnly = look.steps.length > 0 && look.steps.every(st => SLOTS[st.slot]);
+  if (had) { had.steps = packSteps(look.steps); store.set('looks', looksSaved); renderLooksSaved(); }
+  renderLook();
+}
+function stepRender() {
+  const adding = ed.i < 0, st = adding ? null : look.steps[ed.i], slot = adding ? ed.slot : st.slot;
+  const free = ALL_STEPS.filter(k => !look.steps.some(x => x.slot === k) && stepPool(k).length);
+  $('stepTitle').textContent = adding ? 'Add a step' : 'Edit ' + slotInfo(slot).label.toLowerCase();
+  $('stepKinds').hidden = !adding;
+  $('stepKinds').innerHTML = free.map(k => `<button type="button" class="chip" data-kind="${k}" aria-pressed="${k === slot}">${esc(slotInfo(k).label)}</button>`).join('');
+  $('stepHint').textContent = adding ? (free.length ? (slot ? 'Now tap the shade for this step.' : 'Choose which step to add.') : 'This look already has every step your stash can fill.')
+    : `Now: ${st.sh.name}${st.sh.photo || st.sh.product.id === 'photo' ? '' : ', ' + st.sh.product.brand}. Tap another shade to swap it.`;
+  $('stepBody').hidden = !slot; $('stepRemove').hidden = adding || look.steps.length < 2;
+  if (!slot) return;
+  const designs = stepDesigns(slot); $('stepDesign').hidden = $('stepDesignLabel').hidden = !designs || adding;
+  if (designs && st) $('stepDesign').innerHTML = Object.entries(designs).map(([k, o]) => `<option value="${k}"${st.place === k ? ' selected' : ''}>${esc(o.tip.split(/[:.]/)[0])}</option>`).join('');
+  const q = $('stepSearch').value.trim().toLowerCase(), cur = st ? shadeKey(st.sh) : '';
+  const list = stepPool(slot).filter(sh => !q || [sh.name, sh.finish, sh.product.name, sh.product.brand, colorFamily(sh.hex)].join(' ').toLowerCase().includes(q));
+  $('stepPans').innerHTML = list.length ? list.map(sh => `<div class="shade">
+    <button type="button" class="pan f-${sh.group}" style="--c:${sh.hex}" data-pick="${esc(shadeKey(sh))}" aria-pressed="${shadeKey(sh) === cur}" aria-label="${esc(sh.name + ', ' + sh.finish + ', ' + sh.product.brand)}"></button>
+    <span class="name" lang="en">${esc(sh.name)}</span><span class="fin">${esc(sh.product.brand)}</span></div>`).join('') : '<p class="empty">No shade matches that search.</p>';
+}
+function stepOpen(i, slot = null) { ed.i = i; ed.slot = slot; $('stepSearch').value = ''; stepRender(); if (!$('stepDlg').open) $('stepDlg').showModal(); }
+$('stepAdd').addEventListener('click', () => { if (look) stepOpen(-1); });
+$('stepKinds').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { ed.slot = b.dataset.kind; stepRender(); } });
+$('stepSearch').addEventListener('input', stepRender);
+$('stepPans').addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const sh = findShade(b.dataset.pick); if (!sh) return;
+  lookChange(() => {
+    if (ed.i >= 0) { look.steps[ed.i].sh = sh; look.steps[ed.i].locked = true; return; }
+    const designs = stepDesigns(ed.slot), st = { slot: ed.slot, sh, locked: true, ...(designs ? { place: Object.keys(designs)[0] } : {}) };
+    look.steps.push(st); look.steps.sort((a, b) => ALL_STEPS.indexOf(a.slot) - ALL_STEPS.indexOf(b.slot)); ed.i = look.steps.indexOf(st);
+  });
+  stepRender();
+});
+$('stepDesign').addEventListener('change', e => { if (ed.i >= 0) lookChange(() => { look.steps[ed.i].place = e.target.value; }); });
+$('stepRemove').addEventListener('click', () => { if (ed.i < 0) return; lookChange(() => look.steps.splice(ed.i, 1)); $('stepDlg').close(); toast('Step removed'); });
+$('stepDone').addEventListener('click', () => $('stepDlg').close());
 
 showView('looks');
 
