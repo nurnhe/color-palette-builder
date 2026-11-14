@@ -143,6 +143,10 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 
 /* Saved */
 .saved h2 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 500; font-size: 22px; }
+.btn.fav svg { fill: none; }
+.btn.fav[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.btn.fav[aria-pressed="true"] svg { fill: currentColor; }
+.favs-link { align-self: flex-start; }
 .saved-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .saved-item {
   display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center;
@@ -293,6 +297,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
       <span class="label" id="vibeLabel">Pick a vibe</span>
       <div class="vibes" id="vibes" role="group" aria-labelledby="vibeLabel"></div>
       <div class="starring" id="starring" hidden></div>
+      <button class="chip favs-link" type="button" id="favsLink" hidden></button>
       <button class="btn primary" type="button" id="lookNew">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
         New look
@@ -311,12 +316,12 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
           Reroll unlocked
         </button>
-        <button class="btn" type="button" id="lookSave">Save</button>
+        <button class="btn fav" type="button" id="lookSave" aria-pressed="false"><svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/></svg><span id="lookSaveTxt">Favorite</span></button>
         <button class="btn" type="button" id="lookCopy">Copy</button>
       </div>
     </section>
     <section class="saved" aria-labelledby="looksSavedTitle">
-      <h2 id="looksSavedTitle">Saved looks</h2>
+      <h2 id="looksSavedTitle">Favorite looks</h2>
       <ul class="saved-list" id="looksSaved"></ul>
     </section>
   </div>
@@ -1410,6 +1415,12 @@ const slotInfo = k => SLOTS[k] || FACE_STEPS[k.slice(4)] || { label: k, tip: '' 
 const shadeKey = sh => sh.product.id + '|' + sh.name;
 const inCat = (sh, cat) => sh.product.category === cat || (sh.also || []).includes(cat);
 const findShade = key => allShades().find(sh => shadeKey(sh) === key);
+// saved looks keep a copy of each shade, so they still open if the stash changes later
+const snap = sh => ({ name: sh.name, finish: sh.finish, group: sh.group, hex: sh.hex, brand: sh.product.brand, product: sh.product.name, category: sh.product.category });
+const savedShade = s => findShade(s.key) || (s.snap ? { name: s.snap.name, code: '', finish: s.snap.finish, group: s.snap.group, hex: s.snap.hex, desc: '',
+  product: { id: s.key.split('|')[0], brand: s.snap.brand, name: s.snap.product, category: s.snap.category } } : null);
+const lookSig = steps => steps.map(s => s.slot + '=' + (s.key || shadeKey(s.sh))).join(',');
+const savedMatch = () => look && looksSaved.find(l => lookSig(l.steps) === lookSig(look.steps));
 
 let vibe = store.get('vibe', 'surprise'), look = null, hero = null;
 let looksSaved = store.get('looks', []);
@@ -1561,9 +1572,15 @@ function renderLook() {
       </div>
     </li>`;
   }).join('');
+  renderFav();
   $('lookHint').textContent = look.eyesOnly
     ? 'Tap a shade to keep it, then reroll the rest. Your stash only has eyeshadow so far, so only the eyes are made up.'
     : 'Tap a shade to keep it, then reroll the rest.';
+}
+function renderFav() {
+  const on = !!savedMatch(), n = looksSaved.length;
+  $('lookSave').setAttribute('aria-pressed', on); $('lookSaveTxt').textContent = on ? 'Favorited' : 'Favorite';
+  $('favsLink').hidden = !n; $('favsLink').textContent = `♥ ${n} favorite ${n === 1 ? 'look' : 'looks'}`;
 }
 function newLook() { look = buildLook(); renderLook(); }
 function lookText(l) {
@@ -1571,10 +1588,11 @@ function lookText(l) {
 }
 function renderLooksSaved() {
   const list = $('looksSaved');
-  if (!looksSaved.length) { list.innerHTML = '<li><p class="empty">Nothing saved yet. Tap Save on a look you like and it stays on this device.</p></li>'; return; }
+  renderFav();
+  if (!looksSaved.length) { list.innerHTML = '<li><p class="empty">No favorites yet. Tap the heart on a look you like and it stays on this device.</p></li>'; return; }
   list.innerHTML = looksSaved.map(l => `<li class="saved-item">
     <button class="saved-open" data-id="${l.id}" aria-label="Open ${esc(l.title)}">
-      <span class="strip">${l.steps.map(s => { const sh = findShade(s.key); return sh ? `<i style="--c:${sh.hex}"></i>` : ''; }).join('')}</span>
+      <span class="strip">${l.steps.map(s => { const sh = savedShade(s); return sh ? `<i style="--c:${sh.hex}"></i>` : ''; }).join('')}</span>
       <span class="saved-meta"><b>${esc(l.title)}</b> · ${l.steps.length} steps · ${new Date(l.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
     </button>
     <button class="del" data-del="${l.id}">Delete</button>
@@ -1598,9 +1616,12 @@ $('lookSteps').addEventListener('click', e => {
 });
 $('lookSave').addEventListener('click', () => {
   if (!look.steps.length) return;
-  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh) })) });
-  looksSaved = looksSaved.slice(0, 60); store.set('looks', looksSaved); renderLooksSaved(); toast('Look saved');
+  const had = savedMatch();
+  if (had) { looksSaved = looksSaved.filter(l => l !== had); store.set('looks', looksSaved); renderLooksSaved(); toast('Removed from favorites'); return; }
+  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh) })) });
+  looksSaved = looksSaved.slice(0, 100); store.set('looks', looksSaved); renderLooksSaved(); toast('Added to favorites');
 });
+$('favsLink').addEventListener('click', () => $('looksSavedTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 $('lookCopy').addEventListener('click', () => copy(lookText(look), 'Look copied'));
 $('looksSaved').addEventListener('click', e => {
   const del = e.target.closest('[data-del]');
@@ -1616,7 +1637,7 @@ $('looksSaved').addEventListener('click', e => {
   const open = e.target.closest('[data-id]');
   if (open) {
     const l = looksSaved.find(x => x.id === open.dataset.id); if (!l) return;
-    const steps = l.steps.map(s => ({ slot: s.slot, sh: findShade(s.key), locked: false })).filter(s => s.sh);
+    const steps = l.steps.map(s => ({ slot: s.slot, sh: savedShade(s), locked: false })).filter(s => s.sh);
     look = { vibe: VIBES[l.vibe] ? l.vibe : 'glam', title: l.title, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
     renderLook(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Opened ' + l.title);
   }
