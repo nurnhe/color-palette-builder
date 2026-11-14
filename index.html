@@ -1050,6 +1050,18 @@ const STASH = [
   { id: 'byoma-liptide', brand: 'BYOMA', name: 'Liptide pH Lip Oil', category: 'Lip gloss', cols: 5, shades: [
     { name: 'pH Pink', code: '', finish: 'Sheer oil', group: 'glossy', hex: '#f2a3bd', desc: 'Clear lip oil that reacts with your lips and turns a sheer, personal pink' },
   ] },
+  { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
+    { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
+    { name: 'Iridescent AB', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#d8c6f2', desc: 'Aurora stones that flash pink, blue and lilac' },
+    { name: 'Silver', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#b9bfc9', desc: 'Silver stones for cool-toned looks' },
+    { name: 'Gold', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#d8b055', desc: 'Gold stones for warm looks' },
+    { name: 'Pink', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#ee6fa8', desc: 'Pink stones' },
+    { name: 'Red', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#d3243c', desc: 'Red stones' },
+    { name: 'Blue', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#3f7fe0', desc: 'Blue stones' },
+    { name: 'Green', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#3fae7a', desc: 'Green stones' },
+    { name: 'Purple', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#8e5bd0', desc: 'Purple stones' },
+    { name: 'Black', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#26222a', desc: 'Black stones for graphic looks' },
+  ] },
 ];
 const GROUPS = { matte: 'Matte', dewy: 'Dewy', glossy: 'Glossy', metallic: 'Metallic', multi: 'Multichrome', sparkle: 'Sparkle' };
 
@@ -1271,7 +1283,7 @@ function panHtml(sh, pid, i, sub) {
 }
 const GROUP_BY = { product: 'Product', brand: 'Brand', type: 'Type', color: 'Color', finish: 'Finish' };
 const TYPE_LABEL = { 'Eyeshadow palette': 'Eyeshadow', 'Eyeshadow': 'Eyeshadow', 'Lipstick': 'Lips', 'Lip gloss': 'Lips', 'Lip liner': 'Lips' };
-const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Lips', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
+const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Lips', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
 const COLOR_ORDER = ['Whites & creams', 'Browns & nudes', 'Greys', 'Blacks', 'Pinks', 'Reds', 'Oranges & peaches', 'Yellows & golds', 'Greens', 'Teals', 'Blues', 'Purples'];
 function colorFamily(hex) {
   const { h, s, l } = hexToHsl(hex);
@@ -1431,7 +1443,19 @@ const FACE_STEPS = {
   'Lip liner': { label: 'Lip liner', tip: 'Outline the lips, then fill in the corners.' },
   'Lipstick': { label: 'Lips', tip: 'Apply from the center of the lips outward.' },
   'Lip gloss': { label: 'Gloss', tip: 'Dab on the center of the lips.' },
+  'Rhinestones': { label: 'Rhinestones', tip: 'Stick on with lash glue and tweezers once everything else is done.' },
 };
+// where the stones go; dots are for the right side of the face drawing and get mirrored
+const RH_PLACES = {
+  inner: { tip: 'One stone at each inner corner of the eyes.', dots: [[172, 141]] },
+  outer: { tip: 'Three stones fanning out from each outer corner, like a wing.', dots: [[248, 134], [252, 127], [254, 119]] },
+  under: { tip: 'A row of small stones under the lower lash line.', dots: [[190, 160], [200, 163], [210, 164], [220, 163], [230, 160]] },
+  arc: { tip: 'An arc of stones above the crease, following the brow bone.', dots: [[185, 116], [198, 111], [212, 109], [226, 111], [239, 116]] },
+  cheek: { tip: 'A few stones scattered on the top of the cheekbones, like sparkly freckles.', dots: [[218, 180], [229, 174], [239, 167], [226, 186]] },
+  center: { tip: 'One stone under the center of each eye.', dots: [[210, 165]] },
+};
+const RH_BY_VIBE = { bright: ['inner', 'center', 'cheek'], smoky: ['inner', 'outer', 'under'], pop: ['outer', 'under', 'arc', 'cheek'], glam: ['outer', 'under', 'arc', 'cheek', 'inner'] };
+const RH_GLUE = ' Stick them on with lash glue and tweezers once everything else is done.';
 const slotInfo = k => SLOTS[k] || FACE_STEPS[k.slice(4)] || { label: k, tip: '' };
 const shadeKey = sh => sh.product.id + '|' + sh.name;
 const inCat = (sh, cat) => sh.product.category === cat || (sh.also || []).includes(cat);
@@ -1466,10 +1490,11 @@ function buildLook(keep = [], keepVibe = null) {
   const vKey = keepVibe || (vibe === 'surprise' ? pick(Object.keys(VIBES)) : vibe), v = VIBES[vKey];
   const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
   const steps = eye.length ? v.slots.map(slot => ({ slot, sh: null, locked: false })) : [];
-  for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat))) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
+  for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat)) && (cat !== 'Rhinestones' || RH_BY_VIBE[vKey])) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
   const used = new Set();
   const put = (st, sh, locked) => { st.sh = sh; st.locked = locked; used.add(shadeKey(sh)); };
-  for (const k of keep) { const st = steps.find(x => x.slot === k.slot && !x.sh); if (st) put(st, k.sh, true); }
+  for (const k of keep) { const st = steps.find(x => x.slot === k.slot && !x.sh); if (st) { put(st, k.sh, true); if (k.place) st.place = k.place; } }
+  for (const st of steps) if (st.slot === 'cat:Rhinestones' && !st.place) st.place = pick(RH_BY_VIBE[vKey]);
   if (hero && !used.has(shadeKey(hero))) {
     const open = steps.filter(st => !st.sh && SLOTS[st.slot]);
     const faceSt = steps.find(st => !st.sh && st.slot === 'cat:' + hero.product.category);
@@ -1494,7 +1519,7 @@ function buildLook(keep = [], keepVibe = null) {
     const pool = shades.filter(sh => inCat(sh, st.slot.slice(4)));
     // face shades lean toward the eye color family, with some luck
     let best = null, bs = Infinity;
-    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20); if (sc < bs) { bs = sc; best = sh; } }
+    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = st.slot === 'cat:Rhinestones' ? (c.s <= 15 || c.l > 80 ? 10 : ref && ref.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) * .7 : 45) + rand(0, 20) : (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20); if (sc < bs) { bs = sc; best = sh; } }
     put(st, best, false);
   }
   const star = hero && used.has(shadeKey(hero)) ? hero : (lidSt && lidSt.sh) || (steps[0] && steps[0].sh);
@@ -1528,6 +1553,12 @@ function eyeArt(c, id) {
 function lookColors(steps) {
   const c = {}; for (const st of steps) c[SLOTS[st.slot] ? st.slot : st.slot.slice(4)] = st.sh.hex; return c;
 }
+function stonesSvg(steps) {
+  const st = steps.find(x => x.slot === 'cat:Rhinestones'), pl = st && RH_PLACES[st.place];
+  if (!pl) return '';
+  return pl.dots.flatMap(([x, y]) => [x, 300 - x].map(px =>
+    `<circle cx="${px}" cy="${y}" r="2.6" fill="${st.sh.hex}" stroke="#fff" stroke-width=".9"/><circle cx="${px - .8}" cy="${y - .8}" r=".8" fill="#fff" opacity=".9"/>`)).join('');
+}
 function eyeSvg(steps) {
   return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Close-up: where each shade goes on the eye">
     <defs>${eyeDefs('lk')}</defs>
@@ -1556,6 +1587,7 @@ function faceSvg(steps) {
     </g>
     <g transform="translate(164,112) scale(.31)">${eyeArt(c, 'fc')}</g>
     <g transform="translate(136,112) scale(-.31,.31)">${eyeArt(c, 'fc')}</g>
+    ${stonesSvg(steps)}
     <path d="M141,222 Q150,230 159,222" fill="none" stroke="#b08f80" stroke-width="2.5" stroke-linecap="round"/>
     <g ${lip ? '' : 'opacity=".75"'}>
       <path d="M120,262 Q136,250 150,256 Q164,250 180,262 Q150,268 120,262 Z" fill="${lip || '#cf9c94'}"/>
@@ -1582,7 +1614,7 @@ function renderLook() {
   $('lookEye').innerHTML = faceSvg(look.steps) + (look.steps.some(s => SLOTS[s.slot]) ? '<span class="label fig-cap">Eye close-up</span>' + eyeSvg(look.steps) : '');
   $('lookSteps').innerHTML = look.steps.map((st, i) => {
     const info = slotInfo(st.slot), sh = st.sh;
-    const tip = SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
+    const tip = st.place && RH_PLACES[st.place] ? RH_PLACES[st.place].tip + RH_GLUE : SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
     return `<li class="step${SLOTS[st.slot] ? '' : ' face'}">
       <button class="pan f-${sh.group}" style="--c:${sh.hex}" data-step="${i}" aria-pressed="${st.locked}" aria-label="${esc(info.label + ': ' + sh.name + (st.locked ? ', kept' : ', tap to keep'))}"><span class="lock">${LOCK_SVG}</span></button>
       <div class="step-txt">
@@ -1605,7 +1637,7 @@ function renderFav() {
 }
 function newLook() { look = buildLook(); renderLook(); }
 function lookText(l) {
-  return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}`).join('\n');
+  return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}${st.place && RH_PLACES[st.place] ? '. ' + RH_PLACES[st.place].tip : ''}`).join('\n');
 }
 function renderLooksSaved() {
   const list = $('looksSaved');
@@ -1627,7 +1659,7 @@ $('vibes').addEventListener('click', e => {
 $('starring').addEventListener('click', e => { if (e.target.closest('#heroClear')) { hero = null; renderVibes(); newLook(); } });
 $('lookNew').addEventListener('click', newLook);
 $('lookReroll').addEventListener('click', () => {
-  const keep = look.steps.filter(s => s.locked).map(s => ({ slot: s.slot, sh: s.sh }));
+  const keep = look.steps.filter(s => s.locked).map(s => ({ slot: s.slot, sh: s.sh, place: s.place }));
   const title = look.title; look = buildLook(keep, look.vibe); if (keep.length) look.title = title; renderLook();
 });
 $('lookSteps').addEventListener('click', e => {
@@ -1639,7 +1671,7 @@ $('lookSave').addEventListener('click', () => {
   if (!look.steps.length) return;
   const had = savedMatch();
   if (had) { looksSaved = looksSaved.filter(l => l !== had); store.set('looks', looksSaved); renderLooksSaved(); toast('Removed from favorites'); return; }
-  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh) })) });
+  looksSaved.unshift({ id: Date.now().toString(36), at: Date.now(), title: look.title, vibe: look.vibe, steps: look.steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh), ...(s.place ? { place: s.place } : {}) })) });
   looksSaved = looksSaved.slice(0, 100); store.set('looks', looksSaved); renderLooksSaved(); toast('Added to favorites');
 });
 $('favsLink').addEventListener('click', () => $('looksSavedTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }));
@@ -1658,7 +1690,7 @@ $('looksSaved').addEventListener('click', e => {
   const open = e.target.closest('[data-id]');
   if (open) {
     const l = looksSaved.find(x => x.id === open.dataset.id); if (!l) return;
-    const steps = l.steps.map(s => ({ slot: s.slot, sh: savedShade(s), locked: false })).filter(s => s.sh);
+    const steps = l.steps.map(s => ({ slot: s.slot, sh: savedShade(s), locked: false, ...(s.place ? { place: s.place } : {}) })).filter(s => s.sh);
     look = { vibe: VIBES[l.vibe] ? l.vibe : 'glam', title: l.title, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
     renderLook(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Opened ' + l.title);
   }
