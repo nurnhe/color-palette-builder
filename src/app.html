@@ -160,15 +160,17 @@ dialog {
 #photoSteps .chip { flex: none; }
 #photoSteps .chip i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--c); margin-right: 6px; border: 1px solid var(--pan-rim); vertical-align: -1px; }
 .photo-rows { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.photo-rows li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 14px; padding: 8px 10px; }
-.photo-rows .sw { display: flex; align-items: center; gap: 4px; }
-.photo-rows .sw i { width: 26px; height: 26px; border-radius: 50%; background: var(--c); border: 1px solid var(--pan-rim); display: block; }
-.photo-rows .sw i + i { width: 34px; height: 34px; }
+.photo-rows li { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: start; border: 1px dashed var(--line); border-radius: 14px; padding: 8px 10px; }
 .photo-rows .txt { min-width: 0; font-size: 13px; color: var(--muted); }
 .photo-rows .txt b { display: block; color: var(--fg); font-size: 14px; }
-.photo-rows select { margin-top: 4px; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
-.photo-rows .acts { display: flex; flex-direction: column; gap: 4px; }
-.photo-rows .acts button { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 4px; text-align: right; }
+.photo-rows .opts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.photo-rows .opts button { width: 38px; height: 38px; border-radius: 50%; background: var(--c); border: 1px solid var(--pan-rim); padding: 0; }
+.photo-rows .opts button.from-photo { border: 2px dashed var(--muted); }
+.photo-rows .opts button[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+.photo-rows .del { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 4px; }
+.photo-rows select { grid-column: 1 / -1; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+
+
 dialog::backdrop { background: rgba(20, 10, 15, .45); }
 dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500; font-size: 24px; }
 .set { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
@@ -1794,7 +1796,7 @@ renderVibes(); newLook(); renderLooksSaved();
 const PH_ORDER = ['lid', 'crease', 'outer', 'inner', 'lower', 'liner', 'cat:Graphic liner', 'cat:Blush', 'cat:Lipstick', 'cat:Lip gloss', 'cat:Rhinestones'];
 const PH_NAME = { lid: 'Lid', crease: 'Crease', outer: 'Outer corner', inner: 'Inner corner', lower: 'Lower lash line', liner: 'Eyeliner' };
 const phSrc = document.createElement('canvas');
-const ph = { picks: {}, cur: 'lid', ready: false };
+const ph = { picks: {}, cur: 'lid', ready: false, run: 0 };
 const phName = slot => PH_NAME[slot] || slotInfo(slot).label;
 const phPool = slot => allShades().filter(sh => SLOTS[slot] ? EYE_CATS.includes(sh.product.category) : inCat(sh, slot.slice(4)));
 const phSlots = () => PH_ORDER;
@@ -1809,9 +1811,10 @@ const toLab = ([r, g, b]) => {
   return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
 };
 const phMatches = (slot, rgb) => { const a = toLab(rgb);
-  const own = phPool(slot).map(sh => { const b = toLab(hexToRgb(sh.hex)); return { sh, d: Math.hypot(.7 * (a[0] - b[0]), 1.3 * (a[1] - b[1]), 1.3 * (a[2] - b[2])) }; }).sort((x, y) => x.d - y.d).slice(0, 5);
-  const exact = phShade(slot, rgb), close = own.length && (own[0].d < 13 || slot === 'cat:Rhinestones');
-  return close ? [...own.map(m => m.sh), exact] : [exact, ...own.map(m => m.sh)]; };
+  const own = phPool(slot).map(sh => { const b = toLab(hexToRgb(sh.hex)); const grey = Math.max(0, Math.hypot(a[1], a[2]) - Math.hypot(b[1], b[2]));
+    return { sh, d: Math.hypot(.5 * (a[0] - b[0]), 1.3 * (a[1] - b[1]), 1.3 * (a[2] - b[2])) + 1.2 * grey }; }).sort((x, y) => x.d - y.d).slice(0, 5);
+  const exact = phShade(slot, rgb), close = own.length && (own[0].d < 18 || slot === 'cat:Rhinestones');
+  return { list: [exact, ...own.slice(0, 4).map(m => m.sh)], i: close ? 1 : 0 }; };
 function phDraw() {
   const cv = $('photoCanvas'), ctx = cv.getContext('2d');
   cv.width = phSrc.width; cv.height = phSrc.height; ctx.drawImage(phSrc, 0, 0);
@@ -1827,10 +1830,10 @@ function phRender() {
   const rows = slots.filter(slot => ph.picks[slot]);
   $('photoRows').innerHTML = rows.length ? rows.map(slot => { const pk = ph.picks[slot], sh = pk.matches[pk.i];
     const opts = slot === 'cat:Rhinestones' ? RH_PLACES : slot === 'cat:Graphic liner' ? GR_STYLES : null;
-    return `<li><span class="sw"><i style="--c:${pk.hex}" title="Color in the photo"></i><i style="--c:${sh.hex}" title="Your shade"></i></span>
-      <span class="txt"><b>${esc(phName(slot))}: ${esc(sh.name)}</b>${esc(sh.photo ? 'Exact photo color. Nothing you own is close.' : sh.product.brand + ' ' + sh.product.name)}
-        ${opts ? `<br><select data-phplace="${slot}" aria-label="${esc(phName(slot))} design">${Object.entries(opts).map(([k, o]) => `<option value="${k}"${pk.place === k ? ' selected' : ''}>${esc(o.tip.split(/[:.]/)[0])}</option>`).join('')}</select>` : ''}</span>
-      <span class="acts">${pk.matches.length > 1 ? `<button type="button" data-phnext="${slot}">${sh.photo ? 'Use my makeup' : 'Other match'}</button>` : ''}<button type="button" data-phdel="${slot}">Remove</button></span></li>`;
+    return `<li><span class="txt"><b>${esc(phName(slot))}: ${esc(sh.name)}</b>${esc(sh.photo ? 'Exact photo color, not in your stash' : sh.product.brand + ' ' + sh.product.name)}</span>
+      <button type="button" class="del" data-phdel="${slot}" aria-label="Remove ${esc(phName(slot))}">Remove</button>
+      <span class="opts">${pk.matches.map((m, i) => `<button type="button" class="${m.photo ? 'from-photo' : ''}" style="--c:${m.hex}" data-phuse="${slot}|${i}" aria-pressed="${i === pk.i}" aria-label="${esc(m.photo ? 'Exact photo color' : m.name + ', ' + m.product.brand)}" title="${esc(m.photo ? 'Exact photo color' : m.name)}"></button>`).join('')}</span>
+      ${opts ? `<select data-phplace="${slot}" aria-label="${esc(phName(slot))} design">${Object.entries(opts).map(([k, o]) => `<option value="${k}"${pk.place === k ? ' selected' : ''}>${esc(o.tip.split(/[:.]/)[0])}</option>`).join('')}</select>` : ''}</li>`;
   }).join('') : '<li><p class="empty">Nothing picked yet. Start with the lid: tap the main eyeshadow color on your photo.</p></li>';
   $('photoMake').disabled = !rows.length;
   if (ph.ready) phDraw();
@@ -1845,6 +1848,7 @@ function phLoad(file) {
     URL.revokeObjectURL(url); ph.picks = {}; ph.cur = 'lid'; ph.ready = true;
     $('photoWrap').classList.remove('zoom'); $('photoZoom').setAttribute('aria-pressed', 'false'); $('photoZoom').textContent = 'Zoom in';
     phRender(); if (!$('photoDlg').open) $('photoDlg').showModal();
+    phAuto();
   };
   img.onerror = () => { URL.revokeObjectURL(url); toast('That file is not a photo I can open'); };
   img.src = url;
@@ -1853,27 +1857,67 @@ $('photoOpen').addEventListener('click', () => $('photoFile').click());
 $('photoPick').addEventListener('click', () => $('photoFile').click());
 $('photoFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) phLoad(f); });
 $('photoCancel').addEventListener('click', () => $('photoDlg').close());
-$('photoZoom').addEventListener('click', () => { const w = $('photoWrap'), cv = $('photoCanvas'), last = Object.values(ph.picks).pop();
+$('photoZoom').addEventListener('click', () => { const w = $('photoWrap'), cv = $('photoCanvas'), last = ph.picks[ph.cur] || Object.values(ph.picks).filter(k => !k.auto).pop() || ph.picks.lid || Object.values(ph.picks).pop();
   // keep the last tapped spot (or the middle of what is on screen) in view
   const fx = last ? last.x / cv.width : (w.scrollLeft + w.clientWidth / 2) / w.scrollWidth, fy = last ? last.y / cv.height : (w.scrollTop + w.clientHeight / 2) / w.scrollHeight;
   const on = w.classList.toggle('zoom'); w.scrollLeft = fx * w.scrollWidth - w.clientWidth / 2; w.scrollTop = fy * w.scrollHeight - w.clientHeight / 2; $('photoZoom').setAttribute('aria-pressed', on); $('photoZoom').textContent = on ? 'Zoom out' : 'Zoom in'; });
 $('photoSteps').addEventListener('click', e => { const b = e.target.closest('[data-ph]'); if (b) { ph.cur = b.dataset.ph; phRender(); } });
+// reads the color of a small patch: ignores glitter, highlights and lashes, then lifts the dullness a photo adds
+function phSample(x, y, n) {
+  const x0 = Math.max(0, x - n), y0 = Math.max(0, y - n);
+  const d = phSrc.getContext('2d').getImageData(x0, y0, Math.max(1, Math.min(2 * n + 1, phSrc.width - x0)), Math.max(1, Math.min(2 * n + 1, phSrc.height - y0))).data, px = [];
+  for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2], d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11]);
+  px.sort((a, b) => a[3] - b[3]);
+  const mid = px.length > 8 ? px.slice(Math.floor(px.length * .25), Math.ceil(px.length * .8)) : px;
+  const med = c => mid.map(q => q[c]).sort((a, b) => a - b)[mid.length >> 1], c = rgbToHsl(med(0), med(1), med(2));
+  return hslToRgb(c.h, Math.min(100, c.s * 1.35), c.l);
+}
+function phSet(slot, x, y, n, auto) {
+  const rgb = phSample(x, y, n), old = ph.picks[slot], m = phMatches(slot, rgb);
+  ph.picks[slot] = { x, y, hex: rgbToHex(rgb), matches: m.list, i: m.i, auto,
+    place: old ? old.place : slot === 'cat:Rhinestones' ? 'cluster' : slot === 'cat:Graphic liner' ? 'doublewing' : undefined };
+  return old;
+}
 $('photoCanvas').addEventListener('click', e => {
   if (!ph.ready) return;
   const cv = e.currentTarget, rc = cv.getBoundingClientRect();
   const x = Math.round((e.clientX - rc.left) * cv.width / rc.width), y = Math.round((e.clientY - rc.top) * cv.height / rc.height);
-  const n = Math.max(2, Math.round(cv.width / 220)), x0 = Math.max(0, x - n), y0 = Math.max(0, y - n);
-  const d = phSrc.getContext('2d').getImageData(x0, y0, Math.min(2 * n + 1, phSrc.width - x0), Math.min(2 * n + 1, phSrc.height - y0)).data;
-  const rgb = [0, 0, 0]; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) rgb[c] += d[i + c];
-  const avg = rgb.map(v => Math.round(v / (d.length / 4))), slot = ph.cur, old = ph.picks[slot];
-  ph.picks[slot] = { x, y, hex: rgbToHex(avg), matches: phMatches(slot, avg), i: 0,
-    place: old ? old.place : slot === 'cat:Rhinestones' ? 'cluster' : slot === 'cat:Graphic liner' ? 'doublewing' : undefined };
+  const slot = ph.cur, old = phSet(slot, x, y, Math.max(3, Math.round(cv.width / 160)), false);
   const slots = phSlots(), next = slots.slice(slots.indexOf(slot) + 1).find(k => !ph.picks[k]); if (next && !old) ph.cur = next;
   phRender();
 });
+// finds the face on the phone itself (no upload) and suggests a spot for each step
+const PH_HINT = 'Choose a step, then tap that spot on your photo. The app picks up the color and shows the closest shades you own next to the exact photo color.';
+let phFaceP = null;
+const phFace = () => phFaceP || (phFaceP = import('./vendor/mp/vision_bundle.mjs').then(m => m.FaceLandmarker.createFromOptions(
+  { wasmLoaderPath: 'vendor/mp/vision_wasm_internal.js', wasmBinaryPath: 'vendor/mp/vision_wasm_internal.wasm' },
+  { baseOptions: { modelAssetPath: 'vendor/mp/face_landmarker.task', delegate: 'CPU' }, runningMode: 'IMAGE', numFaces: 1 })).catch(e => { phFaceP = null; throw e; }));
+async function phAuto() {
+  const id = ++ph.run; $('photoHint').textContent = 'Looking for your face…';
+  try {
+    const lm = (await (await phFace()).detect(phSrc)).faceLandmarks[0];
+    if (id !== ph.run) return;
+    if (!lm) { $('photoHint').textContent = 'I could not find a face in this photo. ' + PH_HINT; return; }
+    const W = phSrc.width, H = phSrc.height, P = i => [lm[i].x * W, lm[i].y * H];
+    // use the eye that faces the camera more: [outer, inner, top, bottom, cheek]
+    const eyes = [[33, 133, 159, 145, 50], [263, 362, 386, 374, 280]].map(e => e.map(P)), len = e => Math.hypot(e[0][0] - e[1][0], e[0][1] - e[1][1]);
+    const [outer, inner, top, bot, cheek] = len(eyes[0]) > len(eyes[1]) ? eyes[0] : eyes[1], w = Math.hypot(outer[0] - inner[0], outer[1] - inner[1]);
+    const ax = [(outer[0] - inner[0]) / w, (outer[1] - inner[1]) / w], up0 = [top[0] - bot[0], top[1] - bot[1]], ul = Math.hypot(...up0) || 1, up = [up0[0] / ul, up0[1] / ul];
+    const at = (p, a, u) => [p[0] + (ax[0] * a + up[0] * u) * w, p[1] + (ax[1] * a + up[1] * u) * w];
+    const lipA = P(14), lipB = P(17);
+    const spots = { lid: at(top, 0, .22), crease: at(top, .05, .4), outer: at(outer, .12, .16), inner: at(inner, -.12, .09), lower: at(bot, 0, -.045),
+      'cat:Blush': cheek, 'cat:Lipstick': [(lipA[0] + lipB[0]) / 2, (lipA[1] + lipB[1]) / 2] };
+    let n = 0;
+    for (const [slot, [x, y]] of Object.entries(spots)) if (!ph.picks[slot] && x >= 0 && y >= 0 && x < W && y < H) {
+      phSet(slot, Math.round(x), Math.round(y), Math.max(2, Math.round(w * (SLOTS[slot] ? .035 : .08))), true); n++; }
+    ph.cur = phSlots().find(k => !ph.picks[k]) || ph.cur;
+    $('photoHint').textContent = `I found your face and picked ${n} spots for you. Check the colors below. To move a spot, choose its step and tap the right place on the photo. Liner and rhinestones are yours to tap.`;
+    phRender();
+  } catch (e) { if (id === ph.run) $('photoHint').textContent = PH_HINT; }
+}
 $('photoRows').addEventListener('click', e => {
-  const nx = e.target.closest('[data-phnext]'), del = e.target.closest('[data-phdel]');
-  if (nx) { const pk = ph.picks[nx.dataset.phnext]; pk.i = (pk.i + 1) % pk.matches.length; phRender(); }
+  const use = e.target.closest('[data-phuse]'), del = e.target.closest('[data-phdel]');
+  if (use) { const [slot, i] = use.dataset.phuse.split('|'); ph.picks[slot].i = +i; phRender(); }
   if (del) { delete ph.picks[del.dataset.phdel]; ph.cur = del.dataset.phdel; phRender(); }
 });
 $('photoRows').addEventListener('change', e => { const sel = e.target.closest('[data-phplace]'); if (sel) ph.picks[sel.dataset.phplace].place = sel.value; });
