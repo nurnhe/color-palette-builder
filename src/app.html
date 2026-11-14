@@ -1033,6 +1033,13 @@ const STASH = [
   { id: 'byoma-liptide', brand: 'BYOMA', name: 'Liptide pH Lip Oil', category: 'Lip gloss', cols: 5, shades: [
     { name: 'pH Pink', code: '', finish: 'Sheer oil', group: 'glossy', hex: '#f2a3bd', desc: 'Clear lip oil that reacts with your lips and turns a sheer, personal pink' },
   ] },
+  { id: 'dmb-colorfix', brand: 'Danessa Myricks Beauty', name: 'Colorfix Matte', category: 'Eyeshadow', cols: 5, shades: [
+    { name: 'Primary Red', code: '', finish: 'Cream matte', group: 'matte', hex: '#c21f2e', also: ['Lipstick', 'Blush'], desc: 'Classic red cream color. Use on lips, as blush (sheered out), as a graphic liner or as eyeshadow.' },
+    { name: 'Desert Rose', code: '', finish: 'Cream matte', group: 'matte', hex: '#c27f7c', also: ['Blush', 'Lipstick'], desc: 'Dusty rose cream color. Use as blush, on lips or as eyeshadow.' },
+    { name: 'Crème Brûlée', code: '', finish: 'Cream matte', group: 'matte', hex: '#b08c8c', also: ['Lipstick', 'Blush'], desc: 'Muted mauve nude cream color. Use as eyeshadow or eyeshadow base, on lips or as a soft blush.' },
+    { name: 'Lift', code: '', finish: 'Cream matte', group: 'matte', hex: '#f6f4f0', desc: 'Snow white cream color. Use as an eyeshadow base to make colors pop, as an inner corner highlight or as white liner.' },
+    { name: 'Matcha', code: '', finish: 'Cream matte', group: 'matte', hex: '#9aa85a', desc: 'Muted matcha green cream color. Use as eyeshadow, eyeshadow base or liner.' },
+  ] },
   { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
     { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
     { name: 'Iridescent AB', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#d8c6f2', desc: 'Aurora stones that flash pink, blue and lilac' },
@@ -1285,7 +1292,7 @@ function colorFamily(hex) {
   if (h >= 300 && h < 345) return l < 34 ? 'Purples' : 'Pinks';
   return l > 66 ? 'Pinks' : 'Reds';
 }
-const typesOf = sh => [TYPE_LABEL[sh.product.category] || sh.product.category, ...(sh.also || [])];
+const typesOf = sh => [...new Set([sh.product.category, ...(sh.also || [])].map(c => TYPE_LABEL[c] || c))];
 const byLight = (a, b) => hexToHsl(b.hex).l - hexToHsl(a.hex).l;
 
 const finishOf = sh => GROUPS[sh.group] || sh.finish;
@@ -1502,7 +1509,7 @@ function buildLook(keep = [], keepVibe = null) {
     const pool = shades.filter(sh => inCat(sh, st.slot.slice(4)));
     // face shades lean toward the eye color family, with some luck
     let best = null, bs = Infinity;
-    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = st.slot === 'cat:Rhinestones' ? (c.s <= 15 || c.l > 80 ? 10 : ref && ref.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) * .7 : 45) + rand(0, 20) : (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20); if (sc < bs) { bs = sc; best = sh; } }
+    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = (used.has(shadeKey(sh)) ? 200 : 0) + (st.slot === 'cat:Rhinestones' ? (c.s <= 15 || c.l > 80 ? 10 : ref && ref.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) * .7 : 45) + rand(0, 20) : (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20)); if (sc < bs) { bs = sc; best = sh; } }
     put(st, best, false);
   }
   const star = hero && used.has(shadeKey(hero)) ? hero : (lidSt && lidSt.sh) || (steps[0] && steps[0].sh);
