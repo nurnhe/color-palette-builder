@@ -183,6 +183,18 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .sub { display: flex; flex-direction: column; gap: 10px; }
 .brandline { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; font-family: var(--font-body); }
 #viewStash #stashBody { gap: 10px; }
+.fbox { border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 16px; padding: 0 14px; background: var(--surface); }
+.fbox summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.fbox summary::-webkit-details-marker { display: none; }
+.fbox summary .label { margin: 0; }
+.fbox .f-n { font-size: 13px; color: var(--muted); }
+.fbox .f-n::after { content: ' +'; }
+.fbox[open] .f-n::after { content: ' −'; }
+.fbox .f-row { padding: 2px 0 12px; }
+.fbox .f-row > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.fbox .chip, #stashActive .chip { min-height: 34px; padding: 4px 12px; font-size: 13px; }
+#stashActive:empty { display: none; }
+#stashActive .clear { background: none; border-color: transparent; text-decoration: underline; }
 .product .case-head h2 { font-style: normal; }
 .product .brandline { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; font-family: var(--font-body); }
 .product .pans { grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 14px 6px; }
@@ -348,6 +360,11 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
       <h2>My stash</h2>
       <p class="hint" id="stashMeta"></p>
       <input class="text-input" id="stashSearch" type="search" enterkeyhint="search" placeholder="Search a shade, product or brand" aria-label="Search your stash" autocomplete="off">
+      <details class="fbox" id="stashFilterBox">
+        <summary><span class="label">Filter</span><span class="f-n" id="filterCount"></span></summary>
+        <div id="stashFilterRows"></div>
+      </details>
+      <div class="filters" id="stashActive"></div>
       <span class="label" id="groupLabel">Group by</span>
       <div class="filters" id="stashGroups" role="group" aria-labelledby="groupLabel"></div>
     </div>
@@ -1186,6 +1203,8 @@ dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 /* ---------- stash ui ---------- */
 let stashGroup = store.get('stashGroup', 'product'), stashQuery = '', openShade = null;
 const stashOpen = new Set();
+const FILTER_DIMS = { type: 'Type', finish: 'Finish', color: 'Color', brand: 'Brand' };
+const stashFilters = { type: new Set(), finish: new Set(), color: new Set(), brand: new Set() };
 const allShades = () => STASH.flatMap(p => p.shades.map((sh, i) => ({ ...sh, product: p, i })));
 
 function panHtml(sh, pid, i, sub) {
@@ -1219,6 +1238,26 @@ function colorFamily(hex) {
 const typesOf = sh => [TYPE_LABEL[sh.product.category] || sh.product.category, ...(sh.also || [])];
 const byLight = (a, b) => hexToHsl(b.hex).l - hexToHsl(a.hex).l;
 
+const finishOf = sh => GROUPS[sh.group] || sh.finish;
+const dimVals = { type: typesOf, finish: finishOf, color: sh => colorFamily(sh.hex), brand: sh => sh.product.brand };
+const dimOrder = { type: TYPE_ORDER, finish: Object.values(GROUPS), color: COLOR_ORDER };
+const filterCount = () => Object.values(stashFilters).reduce((n, f) => n + f.size, 0);
+// a shade passes when it matches any picked value in every dimension that has picks
+const passFilters = sh => Object.entries(stashFilters).every(([d, f]) => !f.size || [].concat(dimVals[d](sh)).some(v => f.has(v)));
+function renderFilters(all) {
+  $('stashFilterRows').innerHTML = Object.entries(FILTER_DIMS).map(([d, label]) => {
+    const vals = [...new Set(all.flatMap(sh => dimVals[d](sh)))], o = dimOrder[d];
+    vals.sort((a, b) => o ? (o.indexOf(a) + 1 || 99) - (o.indexOf(b) + 1 || 99) : a.localeCompare(b));
+    return `<div class="f-row"><span>${label}</span><div class="filters" role="group" aria-label="${label}">${vals.map(v =>
+      `<button type="button" class="chip" data-fd="${d}" data-fv="${esc(v)}" aria-pressed="${stashFilters[d].has(v)}">${esc(v)}</button>`).join('')}</div></div>`;
+  }).join('');
+  const n = filterCount();
+  $('filterCount').textContent = n ? `${n} on` : 'Type, finish, color, brand';
+  $('stashActive').innerHTML = n ? Object.entries(stashFilters).flatMap(([d, f]) => [...f].map(v =>
+    `<button type="button" class="chip" data-fd="${d}" data-fv="${esc(v)}" aria-pressed="true" aria-label="Remove filter ${esc(v)}">${esc(v)} ×</button>`)).join('') +
+    '<button type="button" class="chip clear" data-clear>Clear all</button>' : '';
+}
+
 // groups: [{ key, title, over, shades, body }]
 function stashGroups(shades) {
   const bucket = (keysOf, order) => {
@@ -1246,14 +1285,16 @@ function stashGroups(shades) {
 }
 function renderStash() {
   const all = allShades(), q = stashQuery.trim().toLowerCase();
-  const shades = q ? all.filter(sh => [sh.name, sh.finish, sh.product.name, sh.product.brand, sh.product.category, colorFamily(sh.hex)].join(' ').toLowerCase().includes(q)) : all;
-  $('stashMeta').textContent = `${STASH.length} ${STASH.length === 1 ? 'product' : 'products'} · ${all.length} shades` + (q ? ` · ${shades.length} found` : '');
+  const nf = filterCount();
+  const shades = all.filter(sh => passFilters(sh) && (!q || [sh.name, sh.finish, sh.product.name, sh.product.brand, sh.product.category, colorFamily(sh.hex)].join(' ').toLowerCase().includes(q)));
+  renderFilters(all);
+  $('stashMeta').textContent = `${STASH.length} ${STASH.length === 1 ? 'product' : 'products'} · ${all.length} shades` + (q || nf ? ` · ${shades.length} found` : '');
   $('stashGroups').innerHTML = Object.entries(GROUP_BY).map(([k, label]) => `<button type="button" class="chip" data-group="${k}" aria-pressed="${stashGroup === k}">${label}</button>`).join('');
   const groups = stashGroups(shades);
   $('stashBody').innerHTML = groups.length ? groups.map(g => {
     const n = g.list.length, dots = [...g.list].sort(stashGroup === 'product' ? () => 0 : byLight);
     const step = Math.max(1, Math.ceil(dots.length / 12));
-    return `<details class="case group" data-key="${esc(g.key)}"${q || stashOpen.has(stashGroup + ':' + g.key) ? ' open' : ''}>
+    return `<details class="case group" data-key="${esc(g.key)}"${q || (nf && shades.length <= 36) || stashOpen.has(stashGroup + ':' + g.key) ? ' open' : ''}>
       <summary>
         <span class="g-txt">${g.over ? `<span class="brandline">${esc(g.over)}</span>` : ''}<b>${esc(g.title)}</b></span>
         <span class="g-n">${n} ${n === 1 ? 'shade' : 'shades'}</span>
@@ -1261,7 +1302,7 @@ function renderStash() {
       </summary>
       <div class="g-body">${g.body}</div>
     </details>`;
-  }).join('') : '<p class="empty">Nothing in your stash matches that search.</p>';
+  }).join('') : '<p class="empty">Nothing in your stash matches that. Try removing a filter.</p>';
 }
 function showView(v) {
   for (const [k, id] of [['looks', 'Looks'], ['stash', 'Stash'], ['palettes', 'Palettes']]) {
@@ -1272,6 +1313,13 @@ function showView(v) {
 }
 document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
 $('stashGroups').addEventListener('click', e => { const b = e.target.closest('[data-group]'); if (b) { stashGroup = b.dataset.group; store.set('stashGroup', stashGroup); renderStash(); } });
+const onFilterClick = e => {
+  const b = e.target.closest('[data-fd]');
+  if (b) { const f = stashFilters[b.dataset.fd], v = b.dataset.fv; f.has(v) ? f.delete(v) : f.add(v); renderStash(); }
+  else if (e.target.closest('[data-clear]')) { Object.values(stashFilters).forEach(f => f.clear()); renderStash(); }
+};
+$('stashFilterRows').addEventListener('click', onFilterClick);
+$('stashActive').addEventListener('click', onFilterClick);
 $('stashSearch').addEventListener('input', e => { stashQuery = e.target.value; renderStash(); });
 $('stashBody').addEventListener('toggle', e => {
   const d = e.target; if (!d.matches || !d.matches('details.group') || stashQuery.trim()) return;
