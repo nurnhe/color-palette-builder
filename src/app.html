@@ -1034,11 +1034,11 @@ const STASH = [
     { name: 'pH Pink', code: '', finish: 'Sheer oil', group: 'glossy', hex: '#f2a3bd', desc: 'Clear lip oil that reacts with your lips and turns a sheer, personal pink' },
   ] },
   { id: 'dmb-colorfix', brand: 'Danessa Myricks Beauty', name: 'Colorfix Matte', category: 'Eyeshadow', cols: 5, shades: [
-    { name: 'Primary Red', code: '', finish: 'Cream matte', group: 'matte', hex: '#c21f2e', also: ['Lipstick', 'Blush'], desc: 'Classic red cream color. Use on lips, as blush (sheered out), as a graphic liner or as eyeshadow.' },
-    { name: 'Desert Rose', code: '', finish: 'Cream matte', group: 'matte', hex: '#c27f7c', also: ['Blush', 'Lipstick'], desc: 'Dusty rose cream color. Use as blush, on lips or as eyeshadow.' },
-    { name: 'Crème Brûlée', code: '', finish: 'Cream matte', group: 'matte', hex: '#b08c8c', also: ['Lipstick', 'Blush'], desc: 'Muted mauve nude cream color. Use as eyeshadow or eyeshadow base, on lips or as a soft blush.' },
-    { name: 'Lift', code: '', finish: 'Cream matte', group: 'matte', hex: '#f6f4f0', desc: 'Snow white cream color. Use as an eyeshadow base to make colors pop, as an inner corner highlight or as white liner.' },
-    { name: 'Matcha', code: '', finish: 'Cream matte', group: 'matte', hex: '#9aa85a', desc: 'Muted matcha green cream color. Use as eyeshadow, eyeshadow base or liner.' },
+    { name: 'Primary Red', code: '', finish: 'Cream matte', group: 'matte', hex: '#c21f2e', also: ['Lipstick', 'Blush', 'Graphic liner'], desc: 'Classic red cream color. Use on lips, as blush (sheered out), as a graphic liner or as eyeshadow.' },
+    { name: 'Desert Rose', code: '', finish: 'Cream matte', group: 'matte', hex: '#c27f7c', also: ['Blush', 'Lipstick', 'Graphic liner'], desc: 'Dusty rose cream color. Use as blush, on lips or as eyeshadow.' },
+    { name: 'Crème Brûlée', code: '', finish: 'Cream matte', group: 'matte', hex: '#b08c8c', also: ['Lipstick', 'Blush', 'Graphic liner'], desc: 'Muted mauve nude cream color. Use as eyeshadow or eyeshadow base, on lips or as a soft blush.' },
+    { name: 'Lift', code: '', finish: 'Cream matte', group: 'matte', hex: '#f6f4f0', also: ['Graphic liner'], desc: 'Snow white cream color. Use as an eyeshadow base to make colors pop, as an inner corner highlight or as white liner.' },
+    { name: 'Matcha', code: '', finish: 'Cream matte', group: 'matte', hex: '#9aa85a', also: ['Graphic liner'], desc: 'Muted matcha green cream color. Use as eyeshadow, eyeshadow base or liner.' },
   ] },
   { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
     { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
@@ -1273,7 +1273,7 @@ function panHtml(sh, pid, i, sub) {
 }
 const GROUP_BY = { product: 'Product', brand: 'Brand', type: 'Type', color: 'Color', finish: 'Finish' };
 const TYPE_LABEL = { 'Eyeshadow palette': 'Eyeshadow', 'Eyeshadow': 'Eyeshadow', 'Lipstick': 'Lips', 'Lip gloss': 'Lips', 'Lip liner': 'Lips' };
-const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Lips', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
+const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Lips', 'Graphic liner', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
 const COLOR_ORDER = ['Whites & creams', 'Browns & nudes', 'Greys', 'Blacks', 'Pinks', 'Reds', 'Oranges & peaches', 'Yellows & golds', 'Greens', 'Teals', 'Blues', 'Purples'];
 function colorFamily(hex) {
   const { h, s, l } = hexToHsl(hex);
@@ -1419,10 +1419,12 @@ const VIBES = {
   bright:   { name: 'Light & bright', slots: ['base', 'transition', 'lid', 'inner', 'liner'], sat: 0, over: { lid: { l: [70, 95] } } },
   smoky:    { name: 'Smoky', slots: SLOT_ORDER, sat: 0, over: { lid: { l: [10, 50] }, crease: { l: [20, 50] }, lower: { l: [10, 45] } } },
   pop:      { name: 'Pop of color', slots: ['base', 'transition', 'crease', 'lid', 'inner', 'liner', 'lower'], sat: 1, over: {} },
+  graphic:  { name: 'Graphic liner', slots: ['base', 'lid', 'inner'], sat: -1, over: { lid: { l: [62, 95] } } },
   glam:     { name: 'Full glam', slots: SLOT_ORDER, sat: 0, over: { lid: { fin: ['sparkle'] }, inner: { fin: ['sparkle'] } } },
 };
 // one step per face category found in the stash
 const FACE_STEPS = {
+  'Graphic liner': { label: 'Graphic liner', tip: 'Draw with a fine angled or liner brush. Let it dry before you blink.' },
   'Foundation': { label: 'Base', tip: 'Apply from the center of the face outward.' },
   'Concealer': { label: 'Concealer', tip: 'Tap under the eyes and on any spots, then blend the edges.' },
   'Bronzer': { label: 'Bronzer', tip: 'Sweep in a 3 shape: temples, under the cheekbones, jawline.' },
@@ -1440,12 +1442,48 @@ const RH_PLACES = {
   inner: { tip: 'One stone at each inner corner of the eyes.', dots: [[172, 141]] },
   outer: { tip: 'Three stones fanning out from each outer corner, like a wing.', dots: [[248, 134], [252, 127], [254, 119]] },
   under: { tip: 'A row of small stones under the lower lash line.', dots: [[190, 160], [200, 163], [210, 164], [220, 163], [230, 160]] },
-  arc: { tip: 'An arc of stones above the crease, following the brow bone.', dots: [[185, 116], [198, 111], [212, 109], [226, 111], [239, 116]] },
-  cheek: { tip: 'A few stones scattered on the top of the cheekbones, like sparkly freckles.', dots: [[218, 180], [229, 174], [239, 167], [226, 186]] },
+  arc: { tip: 'An arc of stones just above the brows, following their shape.', dots: [[188, 111], [200, 107], [213, 105], [226, 107], [238, 112]] },
+  cheek: { tip: 'A few stones scattered on the top of the cheekbones.', dots: [[218, 180], [229, 174], [239, 167], [226, 186]] },
   center: { tip: 'One stone under the center of each eye.', dots: [[210, 165]] },
+  lid: { tip: 'A single stone in the center of each eyelid, just above the lashes.', dots: [[210.5, 130]] },
+  lidline: { tip: 'A line of tiny stones along the upper lash line, on top of the shadow.', dots: [[192, 138], [201, 133.5], [210.5, 131.5], [220, 132.5], [229, 135]] },
+  tear: { tip: 'Two stones dropping down from each inner corner, like a crystal tear.', dots: [[171, 149], [172, 157.5]] },
+  duo: { tip: 'Two stones stacked just under each outer corner.', dots: [[244, 150], [247, 158.5]] },
+  freckles: { tip: 'Stones dotted across the nose and cheeks like sparkly freckles.', dots: [[164, 197], [177, 190], [191, 198], [204, 189], [185, 207]] },
+  cupid: { tip: 'One stone on the cupid\'s bow, right above the center of the top lip.', dots: [[150, 248]] },
+  temple: { tip: 'A loose cluster of stones on each temple, from the brow tail up toward the hairline.', dots: [[238, 100], [246, 108], [249, 95], [252, 116], [242, 88]] },
+  cluster: { tip: 'A scattered cluster around each outer corner, with bigger stones close to the eye and smaller ones further out.', dots: [[246, 128], [253, 136], [251, 146], [243, 151], [256, 124]] },
 };
-const RH_BY_VIBE = { bright: ['inner', 'center', 'cheek'], smoky: ['inner', 'outer', 'under'], pop: ['outer', 'under', 'arc', 'cheek'], glam: ['outer', 'under', 'arc', 'cheek', 'inner'] };
+const RH_BY_VIBE = {
+  bright: ['inner', 'center', 'lid', 'cupid', 'tear', 'duo'],
+  smoky: ['inner', 'outer', 'under', 'lid', 'cluster', 'tear', 'duo'],
+  pop: ['outer', 'under', 'arc', 'cheek', 'freckles', 'temple', 'cluster', 'lidline'],
+  glam: Object.keys(RH_PLACES),
+  graphic: ['inner', 'lid', 'duo', 'cupid', 'tear', 'center', 'freckles'],
+};
 const RH_GLUE = ' Stick them on with lash glue and tweezers once everything else is done.';
+// graphic liner designs, drawn in the 300x170 eye box. F is the liner color.
+const GR_STYLES = {
+  doublewing: { tip: 'Double wing: a classic flick on top, then a second flick from the lower lash line, leaving a gap of bare skin between them.',
+    art: '<path d="M48,112 Q150,40 252,100 L284,76" fill="none" stroke="F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M196,130 Q232,120 286,98" fill="none" stroke="F" stroke-width="5" stroke-linecap="round"/>' },
+  floating: { tip: 'Floating crease: one thin curved line drawn in the crease, above the lid, not touching the lashes.',
+    art: '<path d="M66,66 Q160,20 266,64" fill="none" stroke="F" stroke-width="6" stroke-linecap="round"/>' },
+  cutcrease: { tip: 'Graphic cut crease: trace the crease, then bring the line down at the outer end to meet a sharp wing.',
+    art: '<path d="M62,82 Q150,22 252,60 L284,80 L252,100" fill="none" stroke="F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' },
+  lower: { tip: 'Color on the lower lash line only: a clean line under the eye with a tiny flick at the outer end.',
+    art: '<path d="M62,120 Q150,154 250,106 L274,96" fill="none" stroke="F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' },
+  dots: { tip: 'Dots: three small dots under the lower lashes and one above the center of the lid. Use the tip of a liner brush.',
+    art: '<circle cx="104" cy="146" r="6" fill="F"/><circle cx="150" cy="154" r="6" fill="F"/><circle cx="198" cy="144" r="6" fill="F"/><circle cx="150" cy="48" r="6" fill="F"/>' },
+  innerpoint: { tip: 'Fox eye: a wing at the outer corner and a sharp point pulled down from the inner corner.',
+    art: '<path d="M48,112 Q150,40 252,100 L288,82" fill="none" stroke="F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M52,110 L24,122" fill="none" stroke="F" stroke-width="6" stroke-linecap="round"/>' },
+  geo: { tip: 'Open wing: draw the outline of a triangle at the outer corner and leave the inside empty.',
+    art: '<path d="M232,90 L290,66 L254,102" fill="none" stroke="F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>' },
+  brow: { tip: 'Floating arc: a short curved line above the outer half of the eye, between the crease and the brow.',
+    art: '<path d="M176,40 Q232,32 276,62" fill="none" stroke="F" stroke-width="6" stroke-linecap="round"/>' },
+};
+const PLACES = { ...RH_PLACES, ...GR_STYLES };
+const lastPlace = {};
+const pickPlace = (slot, keys) => { const opts = keys.filter(k => k !== lastPlace[slot]); return lastPlace[slot] = pick(opts.length ? opts : keys); };
 const slotInfo = k => SLOTS[k] || FACE_STEPS[k.slice(4)] || { label: k, tip: '' };
 const shadeKey = sh => sh.product.id + '|' + sh.name;
 const inCat = (sh, cat) => sh.product.category === cat || (sh.also || []).includes(cat);
@@ -1480,7 +1518,10 @@ function buildLook(keep = [], keepVibe = null) {
   const vKey = keepVibe || (vibe === 'surprise' ? pick(Object.keys(VIBES)) : vibe), v = VIBES[vKey];
   const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
   const steps = eye.length ? v.slots.map(slot => ({ slot, sh: null, locked: false })) : [];
-  for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat)) && (cat !== 'Rhinestones' || RH_BY_VIBE[vKey])) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
+  const kept = c => keep.some(k => k.slot === 'cat:' + c);
+  const wants = cat => cat === 'Rhinestones' ? !!RH_BY_VIBE[vKey]
+    : cat === 'Graphic liner' ? vKey === 'graphic' || kept(cat) || (['pop', 'glam'].includes(vKey) && Math.random() < .25) : true;
+  for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat)) && wants(cat)) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
   // lips: lipstick alone, gloss alone, or both. Kept shades and the starring shade always stay.
   const lipFixed = c => keep.some(k => k.slot === 'cat:' + c) || (hero && hero.product.category === c);
   if (steps.some(st => st.slot === 'cat:Lipstick') && steps.some(st => st.slot === 'cat:Lip gloss')) {
@@ -1491,7 +1532,10 @@ function buildLook(keep = [], keepVibe = null) {
   const used = new Set();
   const put = (st, sh, locked) => { st.sh = sh; st.locked = locked; used.add(shadeKey(sh)); };
   for (const k of keep) { const st = steps.find(x => x.slot === k.slot && !x.sh); if (st) { put(st, k.sh, true); if (k.place) st.place = k.place; } }
-  for (const st of steps) if (st.slot === 'cat:Rhinestones' && !st.place) st.place = pick(RH_BY_VIBE[vKey]);
+  for (const st of steps) {
+    if (st.slot === 'cat:Rhinestones' && !st.place) st.place = pickPlace(st.slot, RH_BY_VIBE[vKey]);
+    if (st.slot === 'cat:Graphic liner' && !st.place) st.place = pickPlace(st.slot, Object.keys(GR_STYLES));
+  }
   if (hero && !used.has(shadeKey(hero))) {
     const open = steps.filter(st => !st.sh && SLOTS[st.slot]);
     const faceSt = steps.find(st => !st.sh && st.slot === 'cat:' + hero.product.category);
@@ -1530,7 +1574,8 @@ function eyeDefs(id) {
       <clipPath id="${id}Above"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
       <clipPath id="${id}Eye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>`;
 }
-function eyeArt(c, id) {
+const graphicArt = steps => { const st = steps.find(x => x.slot === 'cat:Graphic liner'), g = st && GR_STYLES[st.place]; return g ? g.art.replaceAll('F', st.sh.hex) : ''; };
+function eyeArt(c, id, extra = '') {
   const el = (k, shape) => c[k] ? shape.replace('F', c[k]) : '';
   return `<path d="M52,40 Q150,2 266,40" fill="none" stroke="#5a4640" stroke-opacity=".55" stroke-width="8" stroke-linecap="round"/>
     <g clip-path="url(#${id}Above)"><g filter="url(#${id}Blur)">
@@ -1545,7 +1590,7 @@ function eyeArt(c, id) {
     <path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z" fill="#f6efec"/>
     <g clip-path="url(#${id}Eye)"><circle cx="150" cy="98" r="27" fill="#6b5a4e"/><circle cx="150" cy="98" r="11" fill="#1c1517"/><circle cx="141" cy="89" r="5" fill="#fff" opacity=".8"/></g>
     ${el('liner', '<path d="M48,112 Q150,40 252,100 L272,86" fill="none" stroke="F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')}
-    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="#3a2c28" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round"/>'}`;
+    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="#3a2c28" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round"/>'}${extra}`;
 }
 function lookColors(steps) {
   const c = {}; for (const st of steps) c[SLOTS[st.slot] ? st.slot : st.slot.slice(4)] = st.sh.hex; return c;
@@ -1560,7 +1605,7 @@ function eyeSvg(steps) {
   return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Close-up: where each shade goes on the eye">
     <defs>${eyeDefs('lk')}</defs>
     <ellipse cx="150" cy="85" rx="146" ry="82" fill="#f0d8c9"/>
-    ${eyeArt(lookColors(steps), 'lk')}
+    ${eyeArt(lookColors(steps), 'lk', graphicArt(steps))}
   </svg>`;
 }
 // whole face: both eyes, cheeks, lips and anything else the look uses
@@ -1582,8 +1627,8 @@ function faceSvg(steps) {
       ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 78)}" cy="176" rx="20" ry="6" transform="rotate(${-s * 22} ${x(s, 78)} 176)" fill="${h}" opacity=".8" filter="url(#fcGlow)"/>`)}
       ${c['Highlighter'] ? `<ellipse cx="150" cy="186" rx="4" ry="22" fill="${c['Highlighter']}" opacity=".7" filter="url(#fcGlow)"/>` : ''}
     </g>
-    <g transform="translate(164,112) scale(.31)">${eyeArt(c, 'fc')}</g>
-    <g transform="translate(136,112) scale(-.31,.31)">${eyeArt(c, 'fc')}</g>
+    <g transform="translate(164,112) scale(.31)">${eyeArt(c, 'fc', graphicArt(steps))}</g>
+    <g transform="translate(136,112) scale(-.31,.31)">${eyeArt(c, 'fc', graphicArt(steps))}</g>
     ${stonesSvg(steps)}
     <path d="M141,222 Q150,230 159,222" fill="none" stroke="#b08f80" stroke-width="2.5" stroke-linecap="round"/>
     <g ${lip ? '' : 'opacity=".75"'}>
@@ -1611,7 +1656,7 @@ function renderLook() {
   $('lookEye').innerHTML = faceSvg(look.steps) + (look.steps.some(s => SLOTS[s.slot]) ? '<span class="label fig-cap">Eye close-up</span>' + eyeSvg(look.steps) : '');
   $('lookSteps').innerHTML = look.steps.map((st, i) => {
     const info = slotInfo(st.slot), sh = st.sh;
-    const tip = st.place && RH_PLACES[st.place] ? RH_PLACES[st.place].tip + RH_GLUE : SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
+    const tip = st.place && PLACES[st.place] ? PLACES[st.place].tip + (RH_PLACES[st.place] ? RH_GLUE : ' ' + info.tip) : SLOTS[st.slot] && sh.group === 'sparkle' && ['lid', 'inner'].includes(st.slot) ? info.tip.replace('with a flat brush or a fingertip', 'with a fingertip so the sparkle sticks') : info.tip;
     return `<li class="step${SLOTS[st.slot] ? '' : ' face'}">
       <button class="pan f-${sh.group}" style="--c:${sh.hex}" data-step="${i}" aria-pressed="${st.locked}" aria-label="${esc(info.label + ': ' + sh.name + (st.locked ? ', kept' : ', tap to keep'))}"><span class="lock">${LOCK_SVG}</span></button>
       <div class="step-txt">
@@ -1634,7 +1679,7 @@ function renderFav() {
 }
 function newLook() { look = buildLook(); renderLook(); }
 function lookText(l) {
-  return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}${st.place && RH_PLACES[st.place] ? '. ' + RH_PLACES[st.place].tip : ''}`).join('\n');
+  return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}${st.place && PLACES[st.place] ? '. ' + PLACES[st.place].tip : ''}`).join('\n');
 }
 function renderLooksSaved() {
   const list = $('looksSaved');
