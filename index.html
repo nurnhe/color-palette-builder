@@ -191,6 +191,7 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .fin { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .pan.f-metallic::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.6), rgba(255,255,255,0) 55%), linear-gradient(135deg, rgba(255,255,255,.18), rgba(0,0,0,.14)); }
 .pan.f-multi::after { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%), linear-gradient(135deg, rgba(120,255,190,.38), rgba(255,255,255,0) 45%, rgba(255,120,220,.34)); }
+.pan.f-glossy::after { background: radial-gradient(ellipse at 34% 24%, rgba(255,255,255,.85), rgba(255,255,255,0) 30%), radial-gradient(circle at 32% 28%, rgba(255,255,255,.3), rgba(255,255,255,0) 55%); }
 .pan.f-sparkle::after {
   background:
     radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 50%),
@@ -972,8 +973,11 @@ const STASH = [
     { name: 'Joy', code: '', finish: 'Dewy', group: 'dewy', hex: '#ef8d6f', desc: 'Muted peach with a dewy finish. The orange one of the range.' },
     { name: 'Encourage', code: '', finish: 'Dewy', group: 'dewy', hex: '#e59aa0', desc: 'Soft neutral pink with a dewy finish' },
   ] },
+  { id: 'nyx-shine-loud', brand: 'NYX', name: 'Shine Loud High Shine Lip Color', category: 'Lipstick', cols: 5, shades: [
+    { name: 'On a Mission', code: '18', finish: 'High shine', group: 'glossy', hex: '#d6204e', desc: 'Bright pinky red liquid lip color with a glossy top coat' },
+  ] },
 ];
-const GROUPS = { matte: 'Matte', dewy: 'Dewy', metallic: 'Metallic', multi: 'Multichrome', sparkle: 'Sparkle' };
+const GROUPS = { matte: 'Matte', dewy: 'Dewy', glossy: 'Glossy', metallic: 'Metallic', multi: 'Multichrome', sparkle: 'Sparkle' };
 
 /* ---------- storage ---------- */
 const store = {
