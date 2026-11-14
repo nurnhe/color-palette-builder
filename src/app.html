@@ -151,6 +151,24 @@ dialog {
   border: 0; border-radius: 22px; padding: 22px; width: min(420px, calc(100vw - 32px));
   background: var(--surface); color: var(--fg); box-shadow: 0 20px 60px rgba(0,0,0,.3);
 }
+#photoDlg { width: min(560px, 96vw); max-height: 94dvh; overflow: auto; }
+.photo-wrap { max-height: 46dvh; overflow: auto; border-radius: 14px; border: 1px solid var(--line); background: var(--case); }
+.photo-wrap canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: pan-x pan-y; }
+.photo-wrap.zoom canvas { width: 260%; }
+.photo-tools { margin: 10px 0 14px; }
+#photoSteps { margin: 6px 0 10px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+#photoSteps .chip { flex: none; }
+#photoSteps .chip i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--c); margin-right: 6px; border: 1px solid var(--pan-rim); vertical-align: -1px; }
+.photo-rows { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.photo-rows li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; border: 1px dashed var(--line); border-radius: 14px; padding: 8px 10px; }
+.photo-rows .sw { display: flex; align-items: center; gap: 4px; }
+.photo-rows .sw i { width: 26px; height: 26px; border-radius: 50%; background: var(--c); border: 1px solid var(--pan-rim); display: block; }
+.photo-rows .sw i + i { width: 34px; height: 34px; }
+.photo-rows .txt { min-width: 0; font-size: 13px; color: var(--muted); }
+.photo-rows .txt b { display: block; color: var(--fg); font-size: 14px; }
+.photo-rows select { margin-top: 4px; max-width: 100%; font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.photo-rows .acts { display: flex; flex-direction: column; gap: 4px; }
+.photo-rows .acts button { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: 13px; padding: 4px; text-align: right; }
 dialog::backdrop { background: rgba(20, 10, 15, .45); }
 dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500; font-size: 24px; }
 .set { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
@@ -288,6 +306,11 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.6L12 15l-1.8-4.4L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
         New look
       </button>
+      <button class="btn" type="button" id="photoOpen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg>
+        Chart from a photo
+      </button>
+      <input type="file" id="photoFile" accept="image/*" hidden>
     </div>
     <section class="case looks-case" aria-labelledby="lookTitle">
       <div class="case-head">
@@ -385,6 +408,23 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
     <p class="hint">Tap a group to open it, and a shade for details. Colors are close estimates, not exact matches.</p>
   </div>
 </div>
+
+<dialog id="photoDlg" aria-labelledby="photoTitle">
+  <h2 id="photoTitle">Chart from a photo</h2>
+  <p class="hint" id="photoHint">Choose a step, then tap that spot on your photo. The app picks up the color and finds the closest shade you own, or keeps the exact photo color when nothing you own is close.</p>
+  <span class="label" id="photoStepLabel">Step to pick</span>
+  <div class="filters" id="photoSteps" role="group" aria-labelledby="photoStepLabel"></div>
+  <div class="photo-wrap" id="photoWrap"><canvas id="photoCanvas" aria-label="Your photo. Tap to pick a color."></canvas></div>
+  <div class="filters photo-tools">
+    <button type="button" class="chip" id="photoZoom" aria-pressed="false">Zoom in</button>
+    <button type="button" class="chip" id="photoPick">Change photo</button>
+  </div>
+  <ul class="photo-rows" id="photoRows"></ul>
+  <div class="dialog-actions">
+    <button class="btn" type="button" id="photoCancel">Cancel</button>
+    <button class="btn primary" type="button" id="photoMake">Make face chart</button>
+  </div>
+</dialog>
 
 <dialog id="shadeDlg" aria-labelledby="shadeName">
   <form method="dialog">
@@ -1749,6 +1789,105 @@ palette = generate({ count, type: settings.type });
 renderPalette();
 renderSaved();
 renderVibes(); newLook(); renderLooksSaved();
+
+// ---- face chart from a photo: tap the photo to sample a color, match it to the closest owned shade ----
+const PH_ORDER = ['lid', 'crease', 'outer', 'inner', 'lower', 'liner', 'cat:Graphic liner', 'cat:Blush', 'cat:Lipstick', 'cat:Lip gloss', 'cat:Rhinestones'];
+const PH_NAME = { lid: 'Lid', crease: 'Crease', outer: 'Outer corner', inner: 'Inner corner', lower: 'Lower lash line', liner: 'Eyeliner' };
+const phSrc = document.createElement('canvas');
+const ph = { picks: {}, cur: 'lid', ready: false };
+const phName = slot => PH_NAME[slot] || slotInfo(slot).label;
+const phPool = slot => allShades().filter(sh => SLOTS[slot] ? EYE_CATS.includes(sh.product.category) : inCat(sh, slot.slice(4)));
+const phSlots = () => PH_ORDER;
+// the exact color from the photo, used when nothing owned is close enough
+const phShade = (slot, rgb) => { const hex = rgbToHex(rgb), lab = toLab(rgb), flat = Math.hypot(lab[1], lab[2]) < 9;
+  return { name: (flat && lab[0] > 78 ? 'White' : flat && lab[0] < 22 ? 'Black' : colorFamily(hex).replace(/s$/, '')) + ' from the photo', code: '', finish: 'Photo color', group: 'matte', hex, desc: '', photo: true,
+    product: { id: 'photo', brand: 'Not in', name: 'your stash yet', category: SLOTS[slot] ? 'Eyeshadow' : slot.slice(4) } }; };
+const toLab = ([r, g, b]) => {
+  const f = v => { v /= 255; return v > .04045 ? ((v + .055) / 1.055) ** 2.4 : v / 12.92; };
+  const [R, G, B] = [f(r), f(g), f(b)], t = v => v > .008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116;
+  const x = t((R * .4124 + G * .3576 + B * .1805) / .95047), y = t(R * .2126 + G * .7152 + B * .0722), z = t((R * .0193 + G * .1192 + B * .9505) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+};
+const phMatches = (slot, rgb) => { const a = toLab(rgb);
+  const own = phPool(slot).map(sh => { const b = toLab(hexToRgb(sh.hex)); return { sh, d: Math.hypot(.7 * (a[0] - b[0]), 1.3 * (a[1] - b[1]), 1.3 * (a[2] - b[2])) }; }).sort((x, y) => x.d - y.d).slice(0, 5);
+  const exact = phShade(slot, rgb), close = own.length && (own[0].d < 13 || slot === 'cat:Rhinestones');
+  return close ? [...own.map(m => m.sh), exact] : [exact, ...own.map(m => m.sh)]; };
+function phDraw() {
+  const cv = $('photoCanvas'), ctx = cv.getContext('2d');
+  cv.width = phSrc.width; cv.height = phSrc.height; ctx.drawImage(phSrc, 0, 0);
+  const r = Math.max(9, cv.width / 55);
+  for (const [slot, pk] of Object.entries(ph.picks)) {
+    ctx.beginPath(); ctx.arc(pk.x, pk.y, r, 0, 7); ctx.lineWidth = r / 2.2; ctx.strokeStyle = '#fff'; ctx.stroke();
+    ctx.lineWidth = r / 7; ctx.strokeStyle = slot === ph.cur ? '#7b2d52' : '#241a1f'; ctx.stroke();
+  }
+}
+function phRender() {
+  const slots = phSlots(); if (!slots.includes(ph.cur)) ph.cur = slots[0];
+  $('photoSteps').innerHTML = slots.map(slot => `<button type="button" class="chip" data-ph="${slot}" aria-pressed="${ph.cur === slot}">${ph.picks[slot] ? `<i style="--c:${ph.picks[slot].hex}"></i>` : ''}${esc(phName(slot))}</button>`).join('');
+  const rows = slots.filter(slot => ph.picks[slot]);
+  $('photoRows').innerHTML = rows.length ? rows.map(slot => { const pk = ph.picks[slot], sh = pk.matches[pk.i];
+    const opts = slot === 'cat:Rhinestones' ? RH_PLACES : slot === 'cat:Graphic liner' ? GR_STYLES : null;
+    return `<li><span class="sw"><i style="--c:${pk.hex}" title="Color in the photo"></i><i style="--c:${sh.hex}" title="Your shade"></i></span>
+      <span class="txt"><b>${esc(phName(slot))}: ${esc(sh.name)}</b>${esc(sh.photo ? 'Exact photo color. Nothing you own is close.' : sh.product.brand + ' ' + sh.product.name)}
+        ${opts ? `<br><select data-phplace="${slot}" aria-label="${esc(phName(slot))} design">${Object.entries(opts).map(([k, o]) => `<option value="${k}"${pk.place === k ? ' selected' : ''}>${esc(o.tip.split(/[:.]/)[0])}</option>`).join('')}</select>` : ''}</span>
+      <span class="acts">${pk.matches.length > 1 ? `<button type="button" data-phnext="${slot}">${sh.photo ? 'Use my makeup' : 'Other match'}</button>` : ''}<button type="button" data-phdel="${slot}">Remove</button></span></li>`;
+  }).join('') : '<li><p class="empty">Nothing picked yet. Start with the lid: tap the main eyeshadow color on your photo.</p></li>';
+  $('photoMake').disabled = !rows.length;
+  if (ph.ready) phDraw();
+  const on = $('photoSteps').querySelector('[aria-pressed="true"]'); if (on) $('photoSteps').scrollLeft = on.offsetLeft - $('photoSteps').offsetLeft - 60;
+}
+function phLoad(file) {
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    const k = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+    phSrc.width = Math.round(img.naturalWidth * k); phSrc.height = Math.round(img.naturalHeight * k);
+    phSrc.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, phSrc.width, phSrc.height);
+    URL.revokeObjectURL(url); ph.picks = {}; ph.cur = 'lid'; ph.ready = true;
+    $('photoWrap').classList.remove('zoom'); $('photoZoom').setAttribute('aria-pressed', 'false'); $('photoZoom').textContent = 'Zoom in';
+    phRender(); if (!$('photoDlg').open) $('photoDlg').showModal();
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); toast('That file is not a photo I can open'); };
+  img.src = url;
+}
+$('photoOpen').addEventListener('click', () => $('photoFile').click());
+$('photoPick').addEventListener('click', () => $('photoFile').click());
+$('photoFile').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; if (f) phLoad(f); });
+$('photoCancel').addEventListener('click', () => $('photoDlg').close());
+$('photoZoom').addEventListener('click', () => { const w = $('photoWrap'), cv = $('photoCanvas'), last = Object.values(ph.picks).pop();
+  // keep the last tapped spot (or the middle of what is on screen) in view
+  const fx = last ? last.x / cv.width : (w.scrollLeft + w.clientWidth / 2) / w.scrollWidth, fy = last ? last.y / cv.height : (w.scrollTop + w.clientHeight / 2) / w.scrollHeight;
+  const on = w.classList.toggle('zoom'); w.scrollLeft = fx * w.scrollWidth - w.clientWidth / 2; w.scrollTop = fy * w.scrollHeight - w.clientHeight / 2; $('photoZoom').setAttribute('aria-pressed', on); $('photoZoom').textContent = on ? 'Zoom out' : 'Zoom in'; });
+$('photoSteps').addEventListener('click', e => { const b = e.target.closest('[data-ph]'); if (b) { ph.cur = b.dataset.ph; phRender(); } });
+$('photoCanvas').addEventListener('click', e => {
+  if (!ph.ready) return;
+  const cv = e.currentTarget, rc = cv.getBoundingClientRect();
+  const x = Math.round((e.clientX - rc.left) * cv.width / rc.width), y = Math.round((e.clientY - rc.top) * cv.height / rc.height);
+  const n = Math.max(2, Math.round(cv.width / 220)), x0 = Math.max(0, x - n), y0 = Math.max(0, y - n);
+  const d = phSrc.getContext('2d').getImageData(x0, y0, Math.min(2 * n + 1, phSrc.width - x0), Math.min(2 * n + 1, phSrc.height - y0)).data;
+  const rgb = [0, 0, 0]; for (let i = 0; i < d.length; i += 4) for (let c = 0; c < 3; c++) rgb[c] += d[i + c];
+  const avg = rgb.map(v => Math.round(v / (d.length / 4))), slot = ph.cur, old = ph.picks[slot];
+  ph.picks[slot] = { x, y, hex: rgbToHex(avg), matches: phMatches(slot, avg), i: 0,
+    place: old ? old.place : slot === 'cat:Rhinestones' ? 'cluster' : slot === 'cat:Graphic liner' ? 'doublewing' : undefined };
+  const slots = phSlots(), next = slots.slice(slots.indexOf(slot) + 1).find(k => !ph.picks[k]); if (next && !old) ph.cur = next;
+  phRender();
+});
+$('photoRows').addEventListener('click', e => {
+  const nx = e.target.closest('[data-phnext]'), del = e.target.closest('[data-phdel]');
+  if (nx) { const pk = ph.picks[nx.dataset.phnext]; pk.i = (pk.i + 1) % pk.matches.length; phRender(); }
+  if (del) { delete ph.picks[del.dataset.phdel]; ph.cur = del.dataset.phdel; phRender(); }
+});
+$('photoRows').addEventListener('change', e => { const sel = e.target.closest('[data-phplace]'); if (sel) ph.picks[sel.dataset.phplace].place = sel.value; });
+$('photoMake').addEventListener('click', () => {
+  const order = [...SLOT_ORDER, ...Object.keys(FACE_STEPS).map(c => 'cat:' + c)];
+  const steps = order.filter(slot => ph.picks[slot]).map(slot => { const pk = ph.picks[slot];
+    return { slot, sh: pk.matches[pk.i], locked: false, ...(pk.place ? { place: pk.place } : {}) }; });
+  if (!steps.length) return;
+  const star = (steps.find(st => st.slot === 'lid') || steps[0]).sh;
+  look = { vibe: 'glam', title: 'From my photo · ' + star.name, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
+  $('photoDlg').close(); showView('looks'); renderLook();
+  $('lookTitle').scrollIntoView({ behavior: 'smooth', block: 'start' }); toast('Face chart made. Tap Favorite to keep it.');
+});
+
 showView('looks');
 
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude|anthropic/.test(location.host)) {
