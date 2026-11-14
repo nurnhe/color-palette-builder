@@ -1498,6 +1498,13 @@ function buildLook(keep = [], keepVibe = null) {
   const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
   const steps = eye.length ? v.slots.map(slot => ({ slot, sh: null, locked: false })) : [];
   for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat)) && (cat !== 'Rhinestones' || RH_BY_VIBE[vKey])) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
+  // lips: lipstick alone, gloss alone, or both. Kept shades and the starring shade always stay.
+  const lipFixed = c => keep.some(k => k.slot === 'cat:' + c) || (hero && hero.product.category === c);
+  if (steps.some(st => st.slot === 'cat:Lipstick') && steps.some(st => st.slot === 'cat:Lip gloss')) {
+    const r = Math.random(), glossOnly = vKey === 'everyday' || vKey === 'bright' ? .4 : .15;
+    const drop = r < glossOnly ? 'Lipstick' : r < glossOnly + .4 ? 'Lip gloss' : null;
+    if (drop && !lipFixed(drop)) steps.splice(steps.findIndex(st => st.slot === 'cat:' + drop), 1);
+  }
   const used = new Set();
   const put = (st, sh, locked) => { st.sh = sh; st.locked = locked; used.add(shadeKey(sh)); };
   for (const k of keep) { const st = steps.find(x => x.slot === k.slot && !x.sh); if (st) { put(st, k.sh, true); if (k.place) st.place = k.place; } }
