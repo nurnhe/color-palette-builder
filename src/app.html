@@ -1126,14 +1126,20 @@ const STASH = [
   { id: 'sephora-intense-ink-liquid', brand: 'Sephora Collection', name: '12H Intense Ink Matte Liquid Liner', category: 'Graphic liner', cols: 4, shades: [
     { name: 'Cobalt Blue', code: '05', finish: 'Matte', group: 'matte', hex: '#2443b8', desc: 'Intense cobalt blue waterproof liquid liner with a matte finish. Shake before use.' },
   ] },
+  { id: 'kiko-glitter-shower', brand: 'KIKO Milano', name: 'Glitter Shower Eyeshadow', category: 'Eyeshadow', cols: 4, shades: [
+    { name: 'Enchanted Forest', code: '05', finish: 'Glitter', group: 'sparkle', hex: '#1f5c52', desc: 'Deep emerald-teal green packed with fine glitter. Press it on the lid for a bold sparkly green.' },
+  ] },
   { id: 'kiko-smart-colour-eyeshadow', brand: 'KIKO Milano', name: 'Smart Colour Eyeshadow', category: 'Eyeshadow', cols: 4, shades: [
     { name: 'Pearly Cornflower', code: '22', finish: 'Pearl', group: 'metallic', hex: '#7f9bdc', desc: 'Cornflower blue with a pearly sheen. Wear it all over the lid or as a soft pop of color.' },
+  ] },
+  { id: 'missha-perfect-cover-serum-bb', brand: 'Missha', name: 'M Perfect Cover Serum BB Cream Pro', category: 'Foundation', cols: 4, shades: [
+    { name: 'Light Beige', code: '21', finish: 'Natural', group: 'dewy', hex: '#ecd2b4', coverage: 'light', desc: 'Light coverage BB cream with SPF 50+. Gently blend on, and layer it if you want a bit more coverage.' },
   ] },
   { id: 'maybelline-eraser-concealer', brand: 'Maybelline New York', name: 'Instant Anti-Age Eraser Multi-Use Concealer', category: 'Concealer', cols: 4, shades: [
     { name: 'Light (exact shade unknown)', code: '', finish: 'Natural', group: 'dewy', hex: '#f0d5bd', desc: 'Light shade with a sponge applicator. Dab under the eyes and on spots, then blend the edges. The shade number has rubbed off.' },
   ] },
   { id: 'tirtir-mask-fit-aura-cushion', brand: 'TIRTIR', name: 'Mask Fit Aura Cushion', category: 'Foundation', cols: 4, shades: [
-    { name: 'Ivory', code: '21N', finish: 'Dewy', group: 'dewy', hex: '#f1d8c4', desc: 'Light neutral ivory cushion foundation with a glowy finish. Pat on from the center of the face outward.' },
+    { name: 'Ivory', code: '21N', finish: 'Dewy', group: 'dewy', hex: '#f1d8c4', coverage: 'full', desc: 'Fuller coverage cushion foundation in a light neutral ivory, with a glowy finish. Pat on from the center of the face outward.' },
   ] },
   { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
     { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
@@ -1610,6 +1616,12 @@ function slotScore(sh, slotKey, v, ref, used, jitter = true) {
   return score + (jitter ? rand(0, 14) : 0);
 }
 
+// base products: light coverage for soft looks, fuller coverage for bold ones
+const LIGHT_VIBES = ['everyday', 'bright'];
+function coverageMiss(sh, slot, vKey) {
+  if (slot !== 'cat:Foundation' || !sh.coverage) return 0;
+  return (sh.coverage === 'light') === LIGHT_VIBES.includes(vKey) ? 0 : 60;
+}
 function buildLook(keep = [], keepVibe = null) {
   const vKey = keepVibe || (vibe === 'surprise' ? pick(Object.keys(VIBES)) : vibe), v = VIBES[vKey];
   const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
@@ -1656,7 +1668,7 @@ function buildLook(keep = [], keepVibe = null) {
     const pool = shades.filter(sh => inCat(sh, st.slot.slice(4)));
     // face shades lean toward the eye color family, with some luck
     let best = null, bs = Infinity;
-    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = (used.has(shadeKey(sh)) ? 200 : 0) + (st.slot === 'cat:Rhinestones' ? (c.s <= 15 || c.l > 80 ? 10 : ref && ref.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) * .7 : 45) + rand(0, 20) : (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20)); if (sc < bs) { bs = sc; best = sh; } }
+    for (const sh of pool) { const c = hexToHsl(sh.hex); const sc = (used.has(shadeKey(sh)) ? 200 : 0) + coverageMiss(sh, st.slot, vKey) + (st.slot === 'cat:Rhinestones' ? (c.s <= 15 || c.l > 80 ? 10 : ref && ref.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) * .7 : 45) + rand(0, 20) : (ref && ref.s > 15 && c.s > 15 ? Math.abs(hueDiff(ref.h, c.h)) / 6 : 0) + (v.sat < 0 ? c.s * .2 : 0) + rand(0, 20)); if (sc < bs) { bs = sc; best = sh; } }
     put(st, best, false);
   }
   const star = hero && used.has(shadeKey(hero)) ? hero : (lidSt && lidSt.sh) || (steps[0] && steps[0].sh);
