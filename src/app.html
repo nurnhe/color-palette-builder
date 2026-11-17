@@ -1569,7 +1569,7 @@ const RH_PLACES = {
   outer: { tip: 'Three stones fanning out from each outer corner, like a wing.', dots: [[240, 152], [244, 144], [245, 135]] },
   under: { tip: 'A row of small stones under the lower lash line.', dots: [[176, 172], [187, 175], [198, 176], [209, 175], [220, 172]] },
   arc: { tip: 'An arc of stones just above the brows, following their shape.', dots: [[172, 111], [184, 103], [198, 99], [211, 100], [224, 105]] },
-  cheek: { tip: 'A few stones scattered on the top of the cheekbones.', dots: [[214, 184], [224, 179], [233, 173], [222, 190]] },
+  cheek: { tip: 'A few stones scattered on the top of the cheekbones.', dots: [[214, 190], [224, 185], [233, 179], [222, 196]] },
   center: { tip: 'One stone under the center of each eye.', dots: [[198, 176]] },
   lid: { tip: 'A single stone in the center of each eyelid, just above the lashes.', dots: [[198, 136]] },
   lidline: { tip: 'A line of tiny stones along the upper lash line, on top of the shadow.', dots: [[176, 144], [187, 140], [198, 138.5], [209, 139], [220, 142]] },
@@ -1577,7 +1577,7 @@ const RH_PLACES = {
   duo: { tip: 'Two stones stacked just under each outer corner.', dots: [[233, 165], [235, 173]] },
   freckles: { tip: 'Stones dotted across the nose and cheeks like sparkly freckles.', dots: [[164, 197], [177, 190], [191, 198], [204, 189], [185, 207]] },
   cupid: { tip: 'One stone on the cupid\'s bow, right above the center of the top lip.', dots: [[150, 248]] },
-  temple: { tip: 'A loose cluster of stones on each temple, from the brow tail up toward the hairline.', dots: [[238, 108], [243, 114], [234, 105], [243, 121], [233, 113]] },
+  temple: { tip: 'A loose cluster of stones on each temple, from the brow tail up toward the hairline.', dots: [[238, 114], [243, 120], [234, 108], [243, 128], [233, 118]] },
   cluster: { tip: 'A scattered cluster around each outer corner, with bigger stones close to the eye and smaller ones further out.', dots: [[240, 148], [244, 140], [242, 158], [237, 163], [246, 150]] },
 };
 const RH_BY_VIBE = {
@@ -1706,20 +1706,23 @@ function eyeDefs(id) {
   return `<filter id="${id}Blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
       <filter id="${id}Soft"><feGaussianBlur stdDeviation="1.6"/></filter>
       <clipPath id="${id}Above"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
-      <clipPath id="${id}Eye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>`;
+      <clipPath id="${id}Eye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>
+      <radialGradient id="${id}Iris" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#9db3c6"/><stop offset=".55" stop-color="#7e97ad"/><stop offset=".86" stop-color="#52687d"/><stop offset="1" stop-color="#34475a"/></radialGradient>
+      <radialGradient id="${id}Sclera" cx="50%" cy="55%" r="62%"><stop offset=".5" stop-color="#f7f1ee"/><stop offset="1" stop-color="#d9c9c6"/></radialGradient>
+      <linearGradient id="${id}LidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a28" stop-opacity=".55"/><stop offset=".45" stop-color="#3a2a28" stop-opacity=".1"/><stop offset="1" stop-color="#3a2a28" stop-opacity="0"/></linearGradient>`;
 }
 const graphicArt = steps => { const st = steps.find(x => x.slot === 'cat:Graphic liner'), g = st && GR_STYLES[st.place]; return g ? g.art.replaceAll('F', st.sh.hex) : ''; };
 // mascara: fanned lashes along the upper lash line
 function lashes(hex) {
   if (!hex) return '';
   let d = '';
-  for (let i = 0; i <= 10; i++) {
-    const t = i / 10, u = 1 - t;
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16, u = 1 - t;
     const x = u * u * 48 + 2 * t * u * 150 + t * t * 252, y = u * u * 112 + 2 * t * u * 40 + t * t * 100;
-    const out = -11 - 5 * Math.sin(Math.PI * t), dx = (t - .5) * 18;
-    d += `M${x.toFixed(1)},${y.toFixed(1)} L${(x + dx).toFixed(1)},${(y + out).toFixed(1)} `;
+    const len = 11 + 9 * t + 3 * Math.sin(Math.PI * t), dx = (t - .45) * 22 + 3, qx = x + dx * .35 - 3, qy = y - len * .6;
+    d += `M${x.toFixed(1)},${y.toFixed(1)} Q${qx.toFixed(1)},${qy.toFixed(1)} ${(x + dx).toFixed(1)},${(y - len).toFixed(1)} `;
   }
-  return `<path d="${d}" fill="none" stroke="${hex}" stroke-width="3" stroke-linecap="round"/>`;
+  return `<path d="${d}" fill="none" stroke="${hex}" stroke-width="2.2" stroke-linecap="round"/>`;
 }
 function eyeArt(c, id, extra = '', brow = true) {
   const el = (k, shape) => c[k] ? shape.replace('F', c[k]) : '';
@@ -1733,10 +1736,19 @@ function eyeArt(c, id, extra = '', brow = true) {
       ${el('inner', '<circle cx="60" cy="98" r="12" fill="F"/>')}
     </g></g>
     ${el('lower', `<path d="M60,118 Q150,158 250,104" fill="none" stroke="F" stroke-width="9" stroke-linecap="round" filter="url(#${id}Soft)" opacity=".85"/>`)}
-    <path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z" fill="#f6efec"/>
-    <g clip-path="url(#${id}Eye)"><circle cx="150" cy="98" r="27" fill="#7f95aa"/><circle cx="150" cy="98" r="27" fill="none" stroke="#45586b" stroke-width="3"/><circle cx="150" cy="98" r="17" fill="#a9bac8" opacity=".55"/><circle cx="150" cy="98" r="11" fill="#1c1517"/><circle cx="141" cy="89" r="5" fill="#fff" opacity=".8"/></g>
+    <path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z" fill="url(#${id}Sclera)"/>
+    <g clip-path="url(#${id}Eye)">
+      <circle cx="150" cy="96" r="31" fill="url(#${id}Iris)"/>
+      <g stroke="#e4eef6" stroke-opacity=".28" stroke-width="1.2">${[...Array(14)].map((_, i) => { const a = i * Math.PI / 7; return `<line x1="${(150 + 12 * Math.cos(a)).toFixed(1)}" y1="${(96 + 12 * Math.sin(a)).toFixed(1)}" x2="${(150 + 26 * Math.cos(a)).toFixed(1)}" y2="${(96 + 26 * Math.sin(a)).toFixed(1)}"/>`; }).join('')}</g>
+      <circle cx="150" cy="96" r="12.5" fill="#15110f"/>
+      <ellipse cx="139" cy="88" rx="6" ry="4.6" fill="#fff" opacity=".85"/><circle cx="160" cy="105" r="2.2" fill="#fff" opacity=".4"/>
+      <rect x="40" y="30" width="230" height="64" fill="url(#${id}LidShade)"/>
+    </g>
+    <circle cx="58" cy="112" r="4" fill="#d79b94" opacity=".75" clip-path="url(#${id}Eye)"/>
+    <path d="M56,118 Q150,150 248,104" fill="none" stroke="#6b4a43" stroke-opacity=".3" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M52,104 Q150,18 254,82" fill="none" stroke="#7a5a50" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round"/>
     ${el('liner', '<path d="M48,112 Q150,40 252,100 L272,86" fill="none" stroke="F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>')}
-    ${c.liner ? '' : '<path d="M48,112 Q150,40 252,100" fill="none" stroke="#3a2c28" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round"/>'}${lashes(c['Mascara'])}${extra}`;
+    ${c.liner ? '' : '<path d="M44,114 Q150,32 262,90 L257,100 Q150,46 50,113 Z" fill="#241a18"/>'}${lashes(c['Mascara'])}${extra}`;
 }
 function lookColors(steps) {
   const c = {}; for (const st of steps) c[SLOTS[st.slot] ? st.slot : st.slot.slice(4)] = st.sh.hex;
@@ -1748,7 +1760,9 @@ function frecklesSvg(hex) {
   if (!hex) return '';
   return `<g fill="${hex}" opacity=".62">` + FRECKLES.flatMap(([x, y, r]) => [x, 300 - x].map(px => `<circle cx="${px}" cy="${y}" r="${r}"/>`)).join('') + '</g>';
 }
-const rhPoint = (place, pt) => pt;
+// stone designs are authored on the previous eye frame; map eye-anchored ones onto the current eyes
+const RH_FIXED = ['cheek', 'freckles', 'cupid', 'temple'];
+const rhPoint = (place, [x, y]) => RH_FIXED.includes(place) ? [x, y] : [161.5 + ((x - 144) / .36) * .29, 131.9 + ((y - 117.6) / .36) * .29];
 function stonesSvg(steps) {
   const st = steps.find(x => x.slot === 'cat:Rhinestones'), pl = st && RH_PLACES[st.place];
   if (!pl) return '';
@@ -1803,47 +1817,71 @@ function faceSvg(steps) {
   const both = (k, f) => c[k] ? f(c[k], 1) + f(c[k], -1) : '';
   const x = (side, dx) => 150 + side * dx;
   const lip = c['Lipstick'] || c['Lip gloss'];
-  const skin = c['Foundation'] || '#f0d8c9';
-  const HAIR = 'M44,138 C32,116 28,84 36,56 Q40,34 60,26 Q70,10 92,14 Q108,2 128,9 Q146,0 164,8 Q186,2 202,13 Q226,10 238,26 Q260,32 264,56 C272,84 268,116 256,138 C254,128 252,118 250,108 Q244,98 238,94 Q232,100 226,89 Q218,98 210,87 Q202,96 194,88 Q184,98 176,86 Q166,94 158,85 Q148,95 140,86 Q130,94 122,88 Q112,98 104,88 Q94,98 86,92 Q78,100 70,94 Q62,102 54,108 C50,118 46,128 44,138 Z';
-  const FACE = 'M150,22 C216,22 256,74 254,146 C252,216 218,296 150,314 C82,296 48,216 46,146 C44,74 84,22 150,22 Z';
-  return `<svg class="face" viewBox="0 0 300 340" role="img" aria-label="The whole look on a face, with numbers that match the steps">
+  const skin = c['Foundation'] || '#efd5c3';
+  const HAIR = 'M44,138 C32,116 28,84 36,56 Q40,34 60,26 Q70,10 92,14 Q108,2 128,9 Q146,0 164,8 Q186,2 202,13 Q226,10 238,26 Q260,32 264,56 C272,84 268,116 256,138 C254,128 252,118 250,108 L244,104.5 Q238,101 232,100 Q226,99 224,95.5 Q222,92 216,95.5 Q210,99 203,99.5 Q196,100 193,96 Q190,92 183,94.5 Q176,97 168,97.5 Q160,98 158,94.5 Q156,91 149,94.5 Q142,98 135,99 Q128,100 125,96 Q122,92 115,95 Q108,98 101,98.5 Q94,99 91,95.5 Q88,92 82,95 Q76,98 69,100 Q62,102 58,105 L54,108 C50,118 46,128 44,138 Z';
+  const FACE = 'M150,24 C208,24 250,62 252,118 C253,150 252,176 246,204 C238,240 216,282 186,304 C172,314 160,318 150,318 C140,318 128,314 114,304 C84,282 62,240 54,204 C48,176 47,150 48,118 C50,62 92,24 150,24 Z';
+  const NECK = 'M112,270 C114,300 112,330 108,350 L192,350 C188,330 186,300 188,270 Z';
+    const eye = `<g transform="translate(161.5,131.9) scale(.29)">${eyeArt(c, 'fc', graphicArt(steps), false)}`;
+  const brow = '<g transform="translate(0,-8)"><path d="M40,40 C70,16 120,-6 176,-8 C216,-9 246,4 268,28 C244,14 214,6 176,6 C128,6 84,24 52,50 Z" fill="#4a372f" opacity=".82" filter="url(#fcSoft)"/><g stroke="#2e2019" stroke-opacity=".4" stroke-width="1.4" stroke-linecap="round"><path d="M56,40 C84,18 120,2 156,-2"/><path d="M70,40 C100,24 134,12 172,6"/><path d="M150,-4 C190,-6 226,6 252,20"/></g></g>';
+  return `<svg class="face" viewBox="0 0 300 352" role="img" aria-label="The whole look on a face">
     <defs>${eyeDefs('fc')}
       <filter id="fcCheek" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
       <filter id="fcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="fcSoft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation=".7"/></filter>
+      <filter id="fcMist" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
       <clipPath id="fcHairClip"><path d="${HAIR}"/></clipPath>
       <clipPath id="fcFace"><path d="${FACE}"/></clipPath>
-      <radialGradient id="fcShade" cx="50%" cy="45%" r="60%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#6a3a28" stop-opacity=".16"/></radialGradient>
+      <clipPath id="fcNeck"><path d="${NECK}"/></clipPath>
+      <radialGradient id="fcShade" cx="50%" cy="46%" r="58%"><stop offset=".62" stop-color="#6a3a28" stop-opacity="0"/><stop offset="1" stop-color="#6a3a28" stop-opacity=".2"/></radialGradient>
       <linearGradient id="fcHair" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#5a4333"/><stop offset=".55" stop-color="#3a281f"/><stop offset="1" stop-color="#271912"/></linearGradient>
+      <linearGradient id="fcFadeG" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
+      <mask id="fcFade" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="352"><rect width="300" height="352" fill="url(#fcFadeG)"/></mask>
     </defs>
-    <ellipse cx="38" cy="162" rx="11" ry="18" fill="${skin}"/><ellipse cx="262" cy="162" rx="11" ry="18" fill="${skin}"/>
-    <ellipse cx="38" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/><ellipse cx="262" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/>
-    <path d="M128,286 C128,316 124,330 112,340 L188,340 C176,330 172,316 172,286 Z" fill="${skin}"/>
-    <path d="M128,286 C128,316 124,330 112,340 L188,340 C176,330 172,316 172,286 Z" fill="#6a3a28" opacity=".16"/>
+    <g mask="url(#fcFade)"><path d="${NECK}" fill="${skin}"/><path d="${NECK}" fill="#6a3a28" opacity=".12"/>
+      <path d="M118,332 C134,342 166,342 182,332" fill="none" stroke="#6a3a28" stroke-opacity=".18" stroke-width="2" stroke-linecap="round"/></g>
+    <g clip-path="url(#fcNeck)"><ellipse cx="150" cy="290" rx="64" ry="22" fill="#4a2616" opacity=".3" filter="url(#fcCheek)"/></g>
+    <g><ellipse cx="42" cy="168" rx="11" ry="21" fill="${skin}"/><ellipse cx="258" cy="168" rx="11" ry="21" fill="${skin}"/>
+      <path d="M40,156 C36,166 38,178 44,184" fill="none" stroke="#7a4a36" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/><path d="M260,156 C264,166 262,178 256,184" fill="none" stroke="#7a4a36" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/></g>
     <path d="${FACE}" fill="${skin}"/>
     <path d="${FACE}" fill="url(#fcShade)"/>
     <g clip-path="url(#fcFace)">
-      ${both('Concealer', (h, s) => `<ellipse cx="${x(s, 50)}" cy="181" rx="22" ry="7" transform="rotate(${-s * 8} ${x(s, 50)} 181)" fill="${h}" opacity=".95" filter="url(#fcGlow)"/>`)}
-      ${both('Bronzer', (h, s) => `<ellipse cx="${x(s, 80)}" cy="236" rx="28" ry="10" transform="rotate(${-s * 28} ${x(s, 80)} 236)" fill="${h}" opacity=".34" filter="url(#fcCheek)"/><ellipse cx="${x(s, 62)}" cy="296" rx="34" ry="9" fill="${h}" opacity=".24" filter="url(#fcCheek)"/>`)}
-      ${both('Blush', (h, s) => `<ellipse cx="${x(s, 62)}" cy="208" rx="29" ry="18" transform="rotate(${-s * 16} ${x(s, 62)} 208)" fill="${h}" opacity=".75" filter="url(#fcCheek)"/>`)}
-      ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 78)}" cy="176" rx="19" ry="6" transform="rotate(${-s * 22} ${x(s, 78)} 176)" fill="${h}" opacity=".85" filter="url(#fcGlow)"/>`)}
-      ${c['Highlighter'] ? `<ellipse cx="150" cy="196" rx="4" ry="20" fill="${c['Highlighter']}" opacity=".75" filter="url(#fcGlow)"/>` : ''}
+      <ellipse cx="150" cy="62" rx="62" ry="30" fill="#fff" opacity=".18" filter="url(#fcMist)"/>
+      <ellipse cx="150" cy="300" rx="26" ry="12" fill="#fff" opacity=".12" filter="url(#fcGlow)"/>
+      <ellipse cx="150" cy="104" rx="120" ry="14" fill="#2a1408" opacity=".26" filter="url(#fcMist)"/>
+      <ellipse cx="78" cy="236" rx="22" ry="40" transform="rotate(24 78 236)" fill="#6a3a28" opacity=".13" filter="url(#fcMist)"/><ellipse cx="222" cy="236" rx="22" ry="40" transform="rotate(-24 222 236)" fill="#6a3a28" opacity=".13" filter="url(#fcMist)"/>
+      <ellipse cx="150" cy="284" rx="40" ry="8" fill="#6a3a28" opacity=".16" filter="url(#fcGlow)"/>
+      ${both('Concealer', (h, s) => `<ellipse cx="${x(s, 54)}" cy="178" rx="22" ry="7" transform="rotate(${-s * 8} ${x(s, 54)} 178)" fill="${h}" opacity=".95" filter="url(#fcGlow)"/>`)}
+      ${both('Bronzer', (h, s) => `<ellipse cx="${x(s, 82)}" cy="240" rx="28" ry="10" transform="rotate(${-s * 30} ${x(s, 82)} 240)" fill="${h}" opacity=".36" filter="url(#fcCheek)"/><ellipse cx="${x(s, 66)}" cy="300" rx="34" ry="9" fill="${h}" opacity=".26" filter="url(#fcCheek)"/><ellipse cx="${x(s, 94)}" cy="96" rx="20" ry="16" fill="${h}" opacity=".24" filter="url(#fcCheek)"/>`)}
+      ${both('Blush', (h, s) => `<ellipse cx="${x(s, 62)}" cy="210" rx="29" ry="18" transform="rotate(${-s * 16} ${x(s, 62)} 210)" fill="${h}" opacity=".74" filter="url(#fcCheek)"/>`)}
+      ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 80)}" cy="188" rx="19" ry="6" transform="rotate(${-s * 24} ${x(s, 80)} 188)" fill="${h}" opacity=".85" filter="url(#fcGlow)"/>`)}
+      ${c['Highlighter'] ? `<ellipse cx="150" cy="190" rx="4" ry="20" fill="${c['Highlighter']}" opacity=".75" filter="url(#fcGlow)"/>` : `<ellipse cx="150" cy="188" rx="5" ry="22" fill="#fff" opacity=".2" filter="url(#fcGlow)"/>`}
     </g>
-    <path d="${HAIR}" fill="url(#fcHair)"/>
-    <g clip-path="url(#fcHairClip)" fill="none" stroke="#c9a47e" stroke-opacity=".34" stroke-linecap="round" stroke-width="1.7">
-      <path d="M64,50 C78,32 100,20 126,16"/><path d="M76,62 C90,42 112,30 138,26"/><path d="M150,12 C176,12 200,18 220,32"/><path d="M166,26 C186,26 208,32 226,46"/>
-      <path d="M240,58 C248,68 253,80 254,94"/><path d="M98,70 C110,62 126,58 142,60"/><path d="M188,56 C202,50 218,52 230,62"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M140,160 C139,184 138,200 134,216" stroke="#7a4a36" stroke-opacity=".16" stroke-width="5" filter="url(#fcGlow)"/><path d="M160,160 C161,184 162,200 166,216" stroke="#7a4a36" stroke-opacity=".16" stroke-width="5" filter="url(#fcGlow)"/>
+      <path d="M133,222 C130,229 136,233 142,231 C146,230 148,228 150,229 C152,228 154,230 158,231 C164,233 170,229 167,222" stroke="#7a4a36" stroke-opacity=".5" stroke-width="1.8"/>
     </g>
-    <path d="M143,196 C141,210 139,218 146,224 C150,226 157,226 160,224" fill="none" stroke="#9a6c58" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
-    <g transform="translate(144,117.6) scale(.36)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
-    <g transform="translate(156,117.6) scale(-.36,.36)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
-    <g fill="none" stroke="#4a3840" stroke-width="5.5" stroke-linecap="round" opacity=".85"><path d="M166,123 Q198,98 234,120"/><path d="M134,123 Q102,98 66,120"/></g>
+    <ellipse cx="150" cy="224" rx="9" ry="6" fill="#fff" opacity=".16" filter="url(#fcSoft)"/>
+    <ellipse cx="139" cy="228" rx="4" ry="2.4" fill="#4a2616" opacity=".4"/><ellipse cx="161" cy="228" rx="4" ry="2.4" fill="#4a2616" opacity=".4"/>
+    <ellipse cx="150" cy="238" rx="9" ry="3" fill="#4a2616" opacity=".14" filter="url(#fcSoft)"/>
+    ${eye}</g>
+    <g transform="translate(161.5,131.9) scale(.29)">${brow}</g>
+    <g transform="translate(138.5,131.9) scale(-.29,.29)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
+    <g transform="translate(138.5,131.9) scale(-.29,.29)">${brow}</g>
     ${frecklesSvg(c['Freckle pen'])}
     ${stonesSvg(steps)}
-    <g ${lip ? '' : 'opacity=".8"'}>
-      <path d="M120,266 C131,261 141,254 150,259 C159,254 169,261 180,266 C168,269 132,269 120,266 Z" fill="${lip || '#cf9c94'}"/>
-      <path d="M120,266 C132,269 168,269 180,266 C175,282 164,290 150,290 C136,290 125,282 120,266 Z" fill="${lip || '#d9a8a0'}"/>
-      <path d="M120,266 C132,269 168,269 180,266" fill="none" stroke="#000" stroke-opacity=".2" stroke-width="1.5" stroke-linecap="round"/>
-      ${c['Lip gloss'] ? '<ellipse cx="150" cy="279" rx="12" ry="3.4" fill="#fff" opacity=".55"/>' : ''}
+    <g>
+      <path d="M121,267 C130,263 140,257 147,258 C149,256 151,256 153,258 C160,257 170,263 179,267 C169,271 160,272 150,272 C140,272 131,271 121,267 Z" fill="${lip || '#bd8379'}"/>
+      <path d="M121,267 C131,272 140,273 150,273 C160,273 169,272 179,267 C175,283 164,291 150,291 C136,291 125,283 121,267 Z" fill="${lip || '#cc938a'}"/>
+      <path d="M121,267 C131,272 140,273 150,273 C160,273 169,272 179,267" fill="none" stroke="#3a1410" stroke-opacity=".35" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M121,267 C130,263 140,257 147,258 C149,256 151,256 153,258 C160,257 170,263 179,267 C169,271 160,272 150,272 C140,272 131,271 121,267 Z" fill="#000" opacity=".1"/>
+      <ellipse cx="150" cy="281" rx="14" ry="4.4" fill="#fff" opacity="${c['Lip gloss'] ? '.5' : '.16'}" filter="url(#fcSoft)"/>
+      ${c['Lip gloss'] ? '<ellipse cx="141" cy="262" rx="6" ry="1.6" fill="#fff" opacity=".38"/>' : ''}
+    </g>
+    <path d="${FACE}" fill="none" stroke="#6a3a28" stroke-opacity=".12" stroke-width="1.2"/>
+    <path d="${HAIR}" fill="url(#fcHair)"/>
+    <g clip-path="url(#fcHairClip)" fill="none" stroke-linecap="round">
+      <g stroke="#150d0a" stroke-opacity=".5" stroke-width="1.3"><path d="M60,40 C74,24 100,12 130,10"/><path d="M92,54 C108,34 138,24 160,24"/><path d="M164,14 C190,16 216,26 230,42"/><path d="M200,44 C214,40 232,46 244,60"/><path d="M70,70 C80,52 96,44 112,42"/><path d="M130,60 C146,50 166,48 184,52"/></g>
+      <g stroke="#c9a47e" stroke-opacity=".34" stroke-width="1.7"><path d="M64,50 C78,32 100,20 126,16"/><path d="M76,62 C90,42 112,30 138,26"/><path d="M150,12 C176,12 200,18 220,32"/><path d="M166,26 C186,26 208,32 226,46"/><path d="M240,58 C248,68 253,80 254,94"/><path d="M98,70 C110,62 126,58 142,60"/><path d="M188,56 C202,50 218,52 230,62"/></g>
     </g>
   </svg>`;
 }
