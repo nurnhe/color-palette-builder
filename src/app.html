@@ -1077,6 +1077,7 @@ const STASH = [
   ] },
   { id: 'nyx-shine-loud', brand: 'NYX', name: 'Shine Loud High Shine Lip Color', category: 'Lipstick', cols: 5, shades: [
     { name: 'On a Mission', code: '18', finish: 'High shine', group: 'glossy', hex: '#d6204e', desc: 'Bright pinky red liquid lip color with a glossy top coat' },
+    { name: 'Global Citizen', code: '07', finish: 'High shine', group: 'glossy', hex: '#c9967f', desc: 'Neutral nude pinkish beige liquid lip color with a glossy top coat' },
   ] },
   { id: 'nars-powermatte', brand: 'NARS', name: 'Powermatte Lip Pigment', category: 'Lipstick', cols: 5, shades: [
     { name: 'Starwoman', code: '', finish: 'Matte', group: 'matte', hex: '#c8102e', desc: 'Bright red liquid lip color with a matte finish (2 ml mini)' },
@@ -1153,6 +1154,9 @@ const STASH = [
   ] },
   { id: 'tirtir-mask-fit-aura-cushion', brand: 'TIRTIR', name: 'Mask Fit Aura Cushion', category: 'Foundation', cols: 4, shades: [
     { name: 'Ivory', code: '21N', finish: 'Dewy', group: 'dewy', hex: '#f1d8c4', coverage: 'full', desc: 'Fuller coverage cushion foundation in a light neutral ivory, with a glowy finish. Pat on from the center of the face outward.' },
+  ] },
+  { id: 'eveline-freckle-pen', brand: 'Eveline Cosmetics', name: 'Freckle Pen', category: 'Freckle pen', cols: 4, shades: [
+    { name: 'Natural brown', code: '', finish: 'Waterproof', group: 'matte', hex: '#8a5a3c', desc: 'Brown waterproof pen for natural-looking faux freckles. Dot lightly across the nose and cheeks, then pat with a fingertip to soften. Exact shade number not on the pen.' },
   ] },
   { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
     { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
@@ -1387,7 +1391,7 @@ function panHtml(sh, pid, i, sub) {
 }
 const GROUP_BY = { product: 'Product', brand: 'Brand', type: 'Type', color: 'Color', finish: 'Finish' };
 const TYPE_LABEL = { 'Eyeshadow palette': 'Eyeshadow', 'Eyeshadow': 'Eyeshadow', 'Lipstick': 'Lips', 'Lip gloss': 'Lips', 'Lip liner': 'Lips' };
-const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Lips', 'Graphic liner', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
+const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Freckle pen', 'Lips', 'Graphic liner', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
 const COLOR_ORDER = ['Whites & creams', 'Browns & nudes', 'Greys', 'Blacks', 'Pinks', 'Reds', 'Oranges & peaches', 'Yellows & golds', 'Greens', 'Teals', 'Blues', 'Purples'];
 function colorFamily(hex) {
   const { h, s, l } = hexToHsl(hex);
@@ -1544,6 +1548,7 @@ const FACE_STEPS = {
   'Bronzer': { label: 'Bronzer', tip: 'Sweep in a 3 shape: temples, under the cheekbones, jawline.' },
   'Blush': { label: 'Cheeks', tip: 'Smile, then blend from the apples of the cheeks up toward the temples.' },
   'Highlighter': { label: 'Highlight', tip: 'Tap on the top of the cheekbones and the bridge of the nose.' },
+  'Freckle pen': { label: 'Freckles', tip: 'Dot lightly across the nose and cheeks, mostly where the sun would hit. Pat with a fingertip to soften.' },
   'Eyeliner': { label: 'Eyeliner', tip: 'Draw as close to the lashes as you can.' },
   'Mascara': { label: 'Mascara', tip: 'Wiggle from the roots up.' },
   'Lip liner': { label: 'Lip liner', tip: 'Outline the lips, then fill in the corners.' },
@@ -1610,7 +1615,7 @@ const lookSig = steps => steps.map(s => s.slot + '=' + (s.key || shadeKey(s.sh))
 const packSteps = steps => steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), snap: snap(s.sh), ...(s.place ? { place: s.place } : {}) }));
 const savedMatch = () => look && looksSaved.find(l => lookSig(l.steps) === lookSig(look.steps));
 
-let vibe = store.get('vibe', 'surprise'), look = null, hero = null;
+let frecklesMode = store.get('freckles', 'random'), vibe = store.get('vibe', 'surprise'), look = null, hero = null;
 let looksSaved = store.get('looks', []);
 
 function slotScore(sh, slotKey, v, ref, used, jitter = true) {
@@ -1640,7 +1645,8 @@ function buildLook(keep = [], keepVibe = null) {
   const shades = allShades(), eye = shades.filter(sh => EYE_CATS.includes(sh.product.category));
   const steps = eye.length ? v.slots.map(slot => ({ slot, sh: null, locked: false })) : [];
   const kept = c => keep.some(k => k.slot === 'cat:' + c);
-  const wants = cat => cat === 'Rhinestones' ? !!RH_BY_VIBE[vKey]
+  const wants = cat => cat === 'Freckle pen' ? (kept(cat) || frecklesMode === 'on' || (frecklesMode === 'random' && Math.random() < .35))
+    : cat === 'Rhinestones' ? !!RH_BY_VIBE[vKey]
     : cat === 'Graphic liner' ? vKey === 'graphic' || kept(cat) || (['pop', 'glam'].includes(vKey) && Math.random() < .25) : true;
   for (const cat of Object.keys(FACE_STEPS)) if (shades.some(sh => inCat(sh, cat)) && wants(cat)) steps.push({ slot: 'cat:' + cat, sh: null, locked: false });
   // lips: lipstick alone, gloss alone, or both. Kept shades and the starring shade always stay.
@@ -1716,6 +1722,11 @@ function eyeArt(c, id, extra = '') {
 function lookColors(steps) {
   const c = {}; for (const st of steps) c[SLOTS[st.slot] ? st.slot : st.slot.slice(4)] = st.sh.hex; return c;
 }
+const FRECKLES = [[121,176,1.5],[133,181,1.2],[143,186,1.4],[128,191,1.1],[112,189,1.3],[103,180,1.1],[118,200,1.2],[138,198,1.0],[96,195,1.2],[126,172,1.0],[108,170,1.0],[91,184,1.0],[148,178,1.0],[134,204,1.1]];
+function frecklesSvg(hex) {
+  if (!hex) return '';
+  return `<g fill="${hex}" opacity=".62">` + FRECKLES.flatMap(([x, y, r]) => [x, 300 - x].map(px => `<circle cx="${px}" cy="${y}" r="${r}"/>`)).join('') + '</g>';
+}
 function stonesSvg(steps) {
   const st = steps.find(x => x.slot === 'cat:Rhinestones'), pl = st && RH_PLACES[st.place];
   if (!pl) return '';
@@ -1750,6 +1761,7 @@ function faceSvg(steps) {
     </g>
     <g transform="translate(164,112) scale(.31)">${eyeArt(c, 'fc', graphicArt(steps))}</g>
     <g transform="translate(136,112) scale(-.31,.31)">${eyeArt(c, 'fc', graphicArt(steps))}</g>
+    ${frecklesSvg(c['Freckle pen'])}
     ${stonesSvg(steps)}
     <path d="M141,222 Q150,230 159,222" fill="none" stroke="#b08f80" stroke-width="2.5" stroke-linecap="round"/>
     <g ${lip ? '' : 'opacity=".75"'}>
@@ -1763,7 +1775,8 @@ function faceSvg(steps) {
 
 function renderVibes() {
   $('vibes').innerHTML = [['surprise', 'Surprise me'], ...Object.entries(VIBES).map(([k, v]) => [k, v.name])]
-    .map(([k, label]) => `<button type="button" class="chip" data-vibe="${k}" aria-pressed="${vibe === k}">${label}</button>`).join('');
+    .map(([k, label]) => `<button type="button" class="chip" data-vibe="${k}" aria-pressed="${vibe === k}">${label}</button>`).join('')
+    + (allShades().some(sh => inCat(sh, 'Freckle pen')) ? `<button type="button" class="chip" data-freckles aria-label="Freckles: ${frecklesMode}">Freckles: ${frecklesMode === 'random' ? 'sometimes' : frecklesMode}</button>` : '');
   const st = $('starring'); st.hidden = !hero;
   if (hero) st.innerHTML = `<i style="--c:${hero.hex}"></i>Starring ${esc(hero.name)}<button type="button" id="heroClear" aria-label="Remove ${esc(hero.name)}">×</button>`;
 }
@@ -1819,6 +1832,10 @@ function renderLooksSaved() {
 $('vibes').addEventListener('click', e => {
   const b = e.target.closest('[data-vibe]'); if (!b) return;
   vibe = b.dataset.vibe; store.set('vibe', vibe); renderVibes(); newLook();
+});
+$('vibes').addEventListener('click', e => {
+  if (!e.target.closest('[data-freckles]')) return;
+  frecklesMode = { random: 'on', on: 'off', off: 'random' }[frecklesMode]; store.set('freckles', frecklesMode); renderVibes(); newLook();
 });
 $('starring').addEventListener('click', e => { if (e.target.closest('#heroClear')) { hero = null; renderVibes(); newLook(); } });
 $('lookNew').addEventListener('click', newLook);
