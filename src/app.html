@@ -178,6 +178,12 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
 .seg button { border: 0; background: transparent; border-radius: 999px; padding: 9px 16px; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .dialog-actions { display: flex; justify-content: flex-end; }
+#settings { max-height: 92dvh; overflow: auto; }
+.fopt { display: flex; flex-wrap: wrap; gap: 8px; }
+.fopt .sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); background: var(--c); padding: 0; }
+.fopt .sw[aria-pressed="true"] { outline: 3px solid var(--fg); outline-offset: 2px; }
+.fopt .chip[aria-pressed="true"] { background: var(--fg); color: var(--surface); }
+.face-sub { font-weight: 600; font-size: 13px; color: var(--muted); margin-top: 6px; }
 
 /* Tabs + stash */
 [hidden] { display: none !important; }
@@ -502,6 +508,11 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
         <button type="button" data-type="face" aria-pressed="false">Full face</button>
       </div>
       <p class="hint">Full face adds blush, bronzer and lip shades.</p>
+    </div>
+    <div class="set" id="faceSet">
+      <span class="label">My face</span>
+      <p class="hint">Shapes the face chart on Looks. Pick what is closest to you.</p>
+      <div id="faceOpts"></div>
     </div>
     <div class="dialog-actions">
       <button class="btn primary" value="done" id="settingsDone">Done</button>
@@ -1356,6 +1367,7 @@ function renderSettings() {
   document.querySelectorAll('[data-type]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.type === settings.type)));
   document.querySelectorAll('[data-style]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.style === settings.style)));
   $('typeSet').hidden = settings.style !== 'wearable';
+  renderFaceSet();
 }
 function saveSettings() { store.set('settings', settings); }
 $('openSettings').addEventListener('click', () => { renderSettings(); dlg.showModal(); });
@@ -1367,6 +1379,11 @@ document.querySelectorAll('[data-style]').forEach(b => b.addEventListener('click
 document.querySelectorAll('[data-type]').forEach(b => b.addEventListener('click', () => {
   settings.type = b.dataset.type; saveSettings(); renderSettings();
 }));
+$('faceOpts').addEventListener('click', e => {
+  const b = e.target.closest('[data-face]'); if (!b) return;
+  faceCfg[b.dataset.face] = b.dataset.val; store.set('face', faceCfg); renderFaceSet();
+  if (look) renderLook();
+});
 let settingsBefore = null;
 $('openSettings').addEventListener('click', () => { settingsBefore = JSON.stringify(settings); });
 dlg.addEventListener('close', () => {
@@ -1702,12 +1719,31 @@ function buildLook(keep = [], keepVibe = null) {
 }
 
 // eye artwork in a 300x170 box; reused as the close-up and, scaled down, on the face
+
+/* ---------- my face (chart look) ---------- */
+const FACE_OPTS = {
+  skin: { label: 'Skin', sw: true, list: [['neutral', 'Neutral', '#f1eeeb'], ['porcelain', 'Porcelain', '#f8e4d6'], ['fair', 'Fair', '#f1d3bd'], ['light', 'Light', '#e8bf9f'], ['medium', 'Medium', '#d29f78'], ['olive', 'Olive', '#c08f62'], ['tan', 'Tan', '#a9724b'], ['brown', 'Brown', '#855434'], ['deep', 'Deep', '#5e3a26'], ['espresso', 'Espresso', '#432a1f']] },
+  hairStyle: { label: 'Hair style', list: [['none', 'None'], ['pixie', 'Short pixie'], ['bob', 'Bob'], ['long', 'Long'], ['curly', 'Curly'], ['bun', 'Bun']] },
+  hairColor: { label: 'Hair color', sw: true, list: [['neutral', 'Neutral grey', '#8f8984'], ['black', 'Black', '#1c1714'], ['dkbrown', 'Dark brown', '#3a281f'], ['ltbrown', 'Light brown', '#8a6040'], ['blonde', 'Blonde', '#d9b76e'], ['red', 'Red', '#a63d22'], ['silver', 'Silver', '#c9ccd1'], ['pink', 'Pink', '#e86fa5'], ['blue', 'Blue', '#4a7be0']] },
+  eyes: { label: 'Eye color', sw: true, list: [['brown', 'Brown', '#6b4423'], ['hazel', 'Hazel', '#8b7a3c'], ['green', 'Green', '#4f8a5b'], ['blue', 'Blue', '#4f86c6'], ['bluegray', 'Blue-gray', '#7e97ad'], ['gray', 'Gray', '#8b9299']] },
+  brows: { label: 'Eyebrows', list: [['soft', 'Soft arch'], ['straight', 'Straight'], ['high', 'High arch'], ['thick', 'Thick']] },
+};
+const FACE_DEFAULT = { skin: 'neutral', hairStyle: 'none', hairColor: 'neutral', eyes: 'bluegray', brows: 'soft' };
+let faceCfg = Object.assign({}, FACE_DEFAULT, store.get('face', {}));
+const faceHex = (k) => (FACE_OPTS[k].list.find(o => o[0] === faceCfg[k]) || FACE_OPTS[k].list[0])[2];
+const mixHex = (a, b, t) => { const x = hexToRgb(a), y = hexToRgb(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+function renderFaceSet() {
+  $('faceOpts').innerHTML = Object.entries(FACE_OPTS).map(([k, g]) => `<div class="face-sub">${g.label}</div><div class="fopt" role="group" aria-label="${g.label}">`
+    + g.list.map(o => g.sw
+      ? `<button type="button" class="sw" data-face="${k}" data-val="${o[0]}" style="--c:${o[2]}" aria-label="${o[1]}" title="${o[1]}" aria-pressed="${faceCfg[k] === o[0]}"></button>`
+      : `<button type="button" class="chip" data-face="${k}" data-val="${o[0]}" aria-pressed="${faceCfg[k] === o[0]}">${o[1]}</button>`).join('') + '</div>').join('');
+}
 function eyeDefs(id) {
   return `<filter id="${id}Blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
       <filter id="${id}Soft"><feGaussianBlur stdDeviation="1.6"/></filter>
       <clipPath id="${id}Above"><path d="M40,113 Q150,38 252,100 L290,70 L290,0 L10,0 L10,113 Z"/></clipPath>
       <clipPath id="${id}Eye"><path d="M48,112 Q150,40 252,100 Q150,152 48,112 Z"/></clipPath>
-      <radialGradient id="${id}Iris" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#9db3c6"/><stop offset=".55" stop-color="#7e97ad"/><stop offset=".86" stop-color="#52687d"/><stop offset="1" stop-color="#34475a"/></radialGradient>
+      <radialGradient id="${id}Iris" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${mixHex(faceHex('eyes'), '#ffffff', .22)}"/><stop offset=".55" stop-color="${faceHex('eyes')}"/><stop offset=".86" stop-color="${mixHex(faceHex('eyes'), '#101820', .35)}"/><stop offset="1" stop-color="${mixHex(faceHex('eyes'), '#101820', .6)}"/></radialGradient>
       <radialGradient id="${id}Sclera" cx="50%" cy="55%" r="62%"><stop offset=".5" stop-color="#f7f1ee"/><stop offset="1" stop-color="#d9c9c6"/></radialGradient>
       <linearGradient id="${id}LidShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a28" stop-opacity=".55"/><stop offset=".45" stop-color="#3a2a28" stop-opacity=".1"/><stop offset="1" stop-color="#3a2a28" stop-opacity="0"/></linearGradient>`;
 }
@@ -1772,7 +1808,7 @@ function stonesSvg(steps) {
 function eyeSvg(steps) {
   return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Close-up: where each shade goes on the eye">
     <defs>${eyeDefs('lk')}</defs>
-    <ellipse cx="150" cy="85" rx="146" ry="82" fill="#f0d8c9"/>
+    <ellipse cx="150" cy="85" rx="146" ry="82" fill="${faceHex('skin') === '#f1eeeb' ? '#f0d8c9' : faceHex('skin')}"/>
     ${eyeArt(lookColors(steps), 'lk', graphicArt(steps))}
   </svg>`;
 }
@@ -1817,23 +1853,42 @@ function faceSvg(steps) {
   const both = (k, f) => c[k] ? f(c[k], 1) + f(c[k], -1) : '';
   const x = (side, dx) => 150 + side * dx;
   const lip = c['Lipstick'] || c['Lip gloss'];
+  const skinHex = faceHex('skin'), dark = hexToHsl(skinHex).l < 45, LINE = dark ? '#e6dcd5' : '#8f8984';
+  const hairHex = faceHex('hairColor'), browHex = faceCfg.hairColor === 'neutral' ? '#8f8984' : mixHex(hairHex, '#2a1d17', .25);
+  const lipBase = lip || mixHex(skinHex, '#c0605f', dark ? .3 : .36);
+  const hs = faceCfg.hairStyle;
+  const UPPER = 'M120,268 C127,265 136,261 143,258.5 C146.5,257.5 148.5,259.5 150,260 C151.5,259.5 153.5,257.5 157,258.5 C164,261 173,265 180,268 C170,270.2 160,271 150,271 C140,271 130,270.2 120,268 Z';
+  const LOWER = 'M120,268 C130,270.2 140,271 150,271 C160,271 170,270.2 180,268 C175,279 165,286.5 150,286.5 C135,286.5 125,279 120,268 Z';
+  const PIXIE = 'M44,138 C32,116 28,84 36,56 Q40,34 60,26 Q70,10 92,14 Q108,2 128,9 Q146,0 164,8 Q186,2 202,13 Q226,10 238,26 Q260,32 264,56 C272,84 268,116 256,138 C254,128 252,118 250,108 L244,104.5 Q238,101 232,100 Q226,99 224,95.5 Q222,92 216,95.5 Q210,99 203,99.5 Q196,100 193,96 Q190,92 183,94.5 Q176,97 168,97.5 Q160,98 158,94.5 Q156,91 149,94.5 Q142,98 135,99 Q128,100 125,96 Q122,92 115,95 Q108,98 101,98.5 Q94,99 91,95.5 Q88,92 82,95 Q76,98 69,100 Q62,102 58,105 L54,108 C50,118 46,128 44,138 Z';
+  const CAP = 'M47,140 C38,84 70,24 150,20 C230,24 262,84 253,140 C246,112 232,86 206,70 C190,90 140,98 100,96 C76,96 60,98 52,104 C50,116 48,128 47,140 Z';
+  const ring = [], curl = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}"/>`;
+  for (let t = -195; t <= 15; t += 15) ring.push(curl((150 + 120 * Math.cos(t * Math.PI / 180)).toFixed(1), (152 + 116 * Math.sin(t * Math.PI / 180)).toFixed(1), 25));
+  for (const y of [190, 225, 255]) ring.push(curl(34, y, 24), curl(266, y, 24));
+  const HAIR_FRONT = { pixie: PIXIE, bob: CAP, long: CAP, curly: CAP, bun: CAP }[hs] || '';
+  const hairBack = { bob: `<path d="M40,130 C30,60 80,16 150,14 C220,16 270,60 260,130 L262,250 C250,268 214,272 196,262 L104,262 C86,272 50,268 38,250 Z"/>`,
+    long: `<path d="M38,130 C28,60 80,14 150,12 C220,14 272,60 262,130 L270,334 L222,344 L196,300 L104,300 L78,344 L30,334 Z"/>`,
+    curly: ring.join(''), bun: `<circle cx="150" cy="22" r="22"/><path d="M60,80 C60,30 240,30 240,80 L240,120 L60,120 Z"/>` }[hs] || '';
+  const hairFrontExtra = hs === 'curly' ? [...Array(7)].map((_, i) => curl(62 + i * 29, 58 + Math.abs(i - 3) * 7, 15)).join('') : '';
   const FACE = 'M150,24 C208,24 250,62 252,118 C253,150 252,176 246,204 C238,240 216,282 186,304 C172,314 160,318 150,318 C140,318 128,314 114,304 C84,282 62,240 54,204 C48,176 47,150 48,118 C50,62 92,24 150,24 Z';
   const NECK = 'M112,270 C114,300 112,330 108,350 L192,350 C188,330 186,300 188,270 Z';
     const eye = `<g transform="translate(161.5,131.9) scale(.29)">${eyeArt(c, 'fc', graphicArt(steps), false)}`;
-  const brow = '<g transform="translate(0,-8)"><path d="M40,40 C70,16 120,-6 176,-8 C216,-9 246,4 268,28 C244,14 214,6 176,6 C128,6 84,24 52,50 Z" fill="#8f8984" opacity=".6" filter="url(#fcSoft)"/><g stroke="#6f6a66" stroke-opacity=".3" stroke-width="1.4" stroke-linecap="round"><path d="M56,40 C84,18 120,2 156,-2"/><path d="M70,40 C100,24 134,12 172,6"/><path d="M150,-4 C190,-6 226,6 252,20"/></g></g>';
-  const LINE = '#8f8984';
+  const BR = { soft: ['M46,40 C90,10 150,-6 192,-4 C228,-2 250,14 264,34', 17], straight: ['M46,26 C100,12 180,10 262,18', 17], high: ['M46,42 C90,10 140,-16 186,-20 C222,-22 248,0 266,36', 15], thick: ['M46,40 C90,10 150,-6 192,-4 C228,-2 250,14 264,34', 30] }[faceCfg.brows];
+  const brow = `<g transform="translate(0,-8)"><path d="${BR[0]}" fill="none" stroke="${browHex}" stroke-width="${BR[1]}" stroke-linecap="round" opacity=".8" filter="url(#fcSoft)"/></g>`;
   return `<svg class="face" viewBox="0 0 300 352" role="img" aria-label="The whole look on a neutral face chart">
     <defs>${eyeDefs('fc')}
       <filter id="fcCheek" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>
       <filter id="fcGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4"/></filter>
       <filter id="fcSoft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation=".7"/></filter>
       <clipPath id="fcFace"><path d="${FACE}"/></clipPath>
+      <clipPath id="fcHairClip"><path d="${HAIR_FRONT || 'M0,0'}"/></clipPath>
+      <linearGradient id="fcHair" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="${mixHex(hairHex, '#ffffff', .14)}"/><stop offset=".6" stop-color="${hairHex}"/><stop offset="1" stop-color="${mixHex(hairHex, '#000000', .28)}"/></linearGradient>
       <linearGradient id="fcFadeG" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></linearGradient>
       <mask id="fcFade" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="352"><rect width="300" height="352" fill="url(#fcFadeG)"/></mask>
     </defs>
-    <g mask="url(#fcFade)"><path d="${NECK}" fill="#ebe7e3"/><path d="${NECK}" fill="none" stroke="${LINE}" stroke-opacity=".5" stroke-width="1.4"/></g>
-    <path d="${FACE}" fill="#f1eeeb"/>
-    ${c['Foundation'] ? `<path d="${FACE}" fill="${c['Foundation']}" opacity=".4"/>` : ''}
+    ${hairBack ? `<g fill="url(#fcHair)">${hairBack}</g>` : ''}
+    <g mask="url(#fcFade)"><path d="${NECK}" fill="${mixHex(skinHex, '#000000', .05)}"/><path d="${NECK}" fill="none" stroke="${LINE}" stroke-opacity=".5" stroke-width="1.4"/></g>
+    <path d="${FACE}" fill="${skinHex}"/>
+    ${c['Foundation'] ? `<path d="${FACE}" fill="${c['Foundation']}" opacity="${faceCfg.skin === 'neutral' ? .4 : .28}"/>` : ''}
     <g clip-path="url(#fcFace)">
       ${both('Concealer', (h, s) => `<ellipse cx="${x(s, 54)}" cy="178" rx="22" ry="7" transform="rotate(${-s * 8} ${x(s, 54)} 178)" fill="${h}" opacity=".95" filter="url(#fcGlow)"/>`)}
       ${both('Bronzer', (h, s) => `<ellipse cx="${x(s, 82)}" cy="240" rx="28" ry="10" transform="rotate(${-s * 30} ${x(s, 82)} 240)" fill="${h}" opacity=".36" filter="url(#fcCheek)"/><ellipse cx="${x(s, 66)}" cy="300" rx="34" ry="9" fill="${h}" opacity=".26" filter="url(#fcCheek)"/><ellipse cx="${x(s, 94)}" cy="96" rx="20" ry="16" fill="${h}" opacity=".24" filter="url(#fcCheek)"/>`)}
@@ -1851,12 +1906,23 @@ function faceSvg(steps) {
     <g transform="translate(138.5,131.9) scale(-.29,.29)">${brow}</g>
     ${frecklesSvg(c['Freckle pen'])}
     ${stonesSvg(steps)}
-    <g stroke="${LINE}" stroke-width="1.4" stroke-linejoin="round" stroke-opacity=".8">
-      <path d="M121,267 C130,263 140,257 147,258 C149,256 151,256 153,258 C160,257 170,263 179,267 C169,271 160,272 150,272 C140,272 131,271 121,267 Z" fill="${lip || '#f1eeeb'}"/>
-      <path d="M121,267 C131,272 140,273 150,273 C160,273 169,272 179,267 C175,283 164,291 150,291 C136,291 125,283 121,267 Z" fill="${lip || '#f1eeeb'}"/>
-      ${c['Lip gloss'] ? '<ellipse cx="150" cy="281" rx="12" ry="3.6" fill="#fff" opacity=".5" stroke="none" filter="url(#fcSoft)"/>' : ''}
+    <g>
+      <defs>
+        <linearGradient id="fcUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".16"/><stop offset="1" stop-color="#000" stop-opacity=".02"/></linearGradient>
+        <linearGradient id="fcLow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".1"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".1"/></linearGradient>
+        <clipPath id="fcLowClip"><path d="${LOWER}"/></clipPath><clipPath id="fcUpClip"><path d="${UPPER}"/></clipPath>
+      </defs>
+      <path d="${LOWER}" fill="${lipBase}"/><path d="${LOWER}" fill="url(#fcLow)"/>
+      <path d="${UPPER}" fill="${mixHex(lipBase, '#000000', .1)}"/><path d="${UPPER}" fill="url(#fcUp)"/>
+      <path d="M120,268 C130,270 140,271 150,271 C160,271 170,270 180,268" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="1" stroke-linecap="round"/>
+      <path d="${UPPER}" fill="none" stroke="${mixHex(lipBase, '#000000', .35)}" stroke-opacity=".45" stroke-width=".8"/>
+      <path d="${LOWER}" fill="none" stroke="${mixHex(lipBase, '#000000', .3)}" stroke-opacity=".25" stroke-width=".8"/>
+      <g clip-path="url(#fcLowClip)"><ellipse cx="150" cy="279.5" rx="${c['Lip gloss'] ? 15 : 11}" ry="${c['Lip gloss'] ? 3.2 : 2}" fill="#fff" opacity="${c['Lip gloss'] ? '.62' : '.14'}" filter="url(#fcSoft)"/></g>
+      ${c['Lip gloss'] ? '<g clip-path="url(#fcUpClip)"><ellipse cx="141" cy="263" rx="6" ry="1.3" fill="#fff" opacity=".5" filter="url(#fcSoft)"/><ellipse cx="160" cy="264" rx="4" ry="1.1" fill="#fff" opacity=".35" filter="url(#fcSoft)"/></g>' : ''}
     </g>
     <path d="${FACE}" fill="none" stroke="${LINE}" stroke-width="1.8"/>
+    ${HAIR_FRONT ? `<path d="${HAIR_FRONT}" fill="url(#fcHair)"/><g fill="url(#fcHair)">${hairFrontExtra}</g>
+    <g clip-path="url(#fcHairClip)" fill="none" stroke-linecap="round" stroke="#000" stroke-opacity=".18" stroke-width="1.3"><path d="M70,60 C90,36 120,26 150,26"/><path d="M110,70 C140,46 180,40 214,58"/><path d="M180,30 C214,36 236,58 244,84"/></g>` : ''}
   </svg>`;
 }
 
