@@ -1582,20 +1582,20 @@ const FACE_STEPS = {
 };
 // where the stones go; dots are for the right side of the face drawing and get mirrored
 const RH_PLACES = {
-  inner: { tip: 'One stone at each inner corner of the eyes.', dots: [[172, 141]] },
-  outer: { tip: 'Three stones fanning out from each outer corner, like a wing.', dots: [[248, 134], [252, 127], [254, 119]] },
-  under: { tip: 'A row of small stones under the lower lash line.', dots: [[190, 160], [200, 163], [210, 164], [220, 163], [230, 160]] },
-  arc: { tip: 'An arc of stones just above the brows, following their shape.', dots: [[188, 111], [200, 107], [213, 105], [226, 107], [238, 112]] },
-  cheek: { tip: 'A few stones scattered on the top of the cheekbones.', dots: [[218, 180], [229, 174], [239, 167], [226, 186]] },
-  center: { tip: 'One stone under the center of each eye.', dots: [[210, 165]] },
-  lid: { tip: 'A single stone in the center of each eyelid, just above the lashes.', dots: [[210.5, 130]] },
-  lidline: { tip: 'A line of tiny stones along the upper lash line, on top of the shadow.', dots: [[192, 138], [201, 133.5], [210.5, 131.5], [220, 132.5], [229, 135]] },
-  tear: { tip: 'Two stones dropping down from each inner corner, like a crystal tear.', dots: [[171, 149], [172, 157.5]] },
-  duo: { tip: 'Two stones stacked just under each outer corner.', dots: [[244, 150], [247, 158.5]] },
+  inner: { tip: 'One stone at each inner corner of the eyes.', dots: [[158, 155]] },
+  outer: { tip: 'Three stones fanning out from each outer corner, like a wing.', dots: [[240, 152], [244, 144], [245, 135]] },
+  under: { tip: 'A row of small stones under the lower lash line.', dots: [[176, 172], [187, 175], [198, 176], [209, 175], [220, 172]] },
+  arc: { tip: 'An arc of stones just above the brows, following their shape.', dots: [[172, 111], [184, 103], [198, 99], [211, 100], [224, 105]] },
+  cheek: { tip: 'A few stones scattered on the top of the cheekbones.', dots: [[214, 184], [224, 179], [233, 173], [222, 190]] },
+  center: { tip: 'One stone under the center of each eye.', dots: [[198, 176]] },
+  lid: { tip: 'A single stone in the center of each eyelid, just above the lashes.', dots: [[198, 136]] },
+  lidline: { tip: 'A line of tiny stones along the upper lash line, on top of the shadow.', dots: [[176, 144], [187, 140], [198, 138.5], [209, 139], [220, 142]] },
+  tear: { tip: 'Two stones dropping down from each inner corner, like a crystal tear.', dots: [[160, 164], [161, 172]] },
+  duo: { tip: 'Two stones stacked just under each outer corner.', dots: [[233, 165], [235, 173]] },
   freckles: { tip: 'Stones dotted across the nose and cheeks like sparkly freckles.', dots: [[164, 197], [177, 190], [191, 198], [204, 189], [185, 207]] },
   cupid: { tip: 'One stone on the cupid\'s bow, right above the center of the top lip.', dots: [[150, 248]] },
-  temple: { tip: 'A loose cluster of stones on each temple, from the brow tail up toward the hairline.', dots: [[238, 100], [246, 108], [249, 95], [252, 116], [242, 88]] },
-  cluster: { tip: 'A scattered cluster around each outer corner, with bigger stones close to the eye and smaller ones further out.', dots: [[246, 128], [253, 136], [251, 146], [243, 151], [256, 124]] },
+  temple: { tip: 'A loose cluster of stones on each temple, from the brow tail up toward the hairline.', dots: [[238, 108], [243, 114], [234, 105], [243, 121], [233, 113]] },
+  cluster: { tip: 'A scattered cluster around each outer corner, with bigger stones close to the eye and smaller ones further out.', dots: [[240, 148], [244, 140], [242, 158], [237, 163], [246, 150]] },
 };
 const RH_BY_VIBE = {
   bright: ['inner', 'center', 'lid', 'cupid', 'tear', 'duo'],
@@ -1765,9 +1765,7 @@ function frecklesSvg(hex) {
   if (!hex) return '';
   return `<g fill="${hex}" opacity=".62">` + FRECKLES.flatMap(([x, y, r]) => [x, 300 - x].map(px => `<circle cx="${px}" cy="${y}" r="${r}"/>`)).join('') + '</g>';
 }
-// placements were drawn for the old eye position; map eye-anchored ones onto the current eyes
-const RH_ABSOLUTE = ['cheek', 'freckles', 'cupid'];
-const rhPoint = (place, [x, y]) => RH_ABSOLUTE.includes(place) ? [x, y] : place === 'temple' ? [x - 8, y + 14] : (place === 'lid' || place === 'lidline') ? [205 + (x - 210.5) * 1.226, 150.2 + (y - 139.9) * 1.226 - 5] : [205 + (x - 210.5) * 1.226, 150.2 + (y - 139.9) * 1.226];
+const rhPoint = (place, pt) => pt;
 function stonesSvg(steps) {
   const st = steps.find(x => x.slot === 'cat:Rhinestones'), pl = st && RH_PLACES[st.place];
   if (!pl) return '';
@@ -1823,14 +1821,16 @@ function faceSvg(steps) {
   const x = (side, dx) => 150 + side * dx;
   const lip = c['Lipstick'] || c['Lip gloss'];
   const skin = c['Foundation'] || '#f0d8c9';
+  const HAIR = 'M44,138 C32,116 28,84 36,56 Q40,34 60,26 Q70,10 92,14 Q108,2 128,9 Q146,0 164,8 Q186,2 202,13 Q226,10 238,26 Q260,32 264,56 C272,84 268,116 256,138 C254,128 252,118 250,108 Q244,98 238,94 Q232,100 226,89 Q218,98 210,87 Q202,96 194,88 Q184,98 176,86 Q166,94 158,85 Q148,95 140,86 Q130,94 122,88 Q112,98 104,88 Q94,98 86,92 Q78,100 70,94 Q62,102 54,108 C50,118 46,128 44,138 Z';
   const FACE = 'M150,22 C216,22 256,74 254,146 C252,216 218,296 150,314 C82,296 48,216 46,146 C44,74 84,22 150,22 Z';
   return `<svg class="face" viewBox="0 0 300 340" role="img" aria-label="The whole look on a face, with numbers that match the steps">
     <defs>${eyeDefs('fc')}
       <filter id="fcCheek" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
       <filter id="fcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+      <clipPath id="fcHairClip"><path d="${HAIR}"/></clipPath>
       <clipPath id="fcFace"><path d="${FACE}"/></clipPath>
       <radialGradient id="fcShade" cx="50%" cy="45%" r="60%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#6a3a28" stop-opacity=".16"/></radialGradient>
-      <linearGradient id="fcHair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a362b"/><stop offset="1" stop-color="#271912"/></linearGradient>
+      <linearGradient id="fcHair" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#5a4333"/><stop offset=".55" stop-color="#3a281f"/><stop offset="1" stop-color="#271912"/></linearGradient>
     </defs>
     <ellipse cx="38" cy="162" rx="11" ry="18" fill="${skin}"/><ellipse cx="262" cy="162" rx="11" ry="18" fill="${skin}"/>
     <ellipse cx="38" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/><ellipse cx="262" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/>
@@ -1839,20 +1839,21 @@ function faceSvg(steps) {
     <path d="${FACE}" fill="${skin}"/>
     <path d="${FACE}" fill="url(#fcShade)"/>
     <g clip-path="url(#fcFace)">
-      ${both('Concealer', (h, s) => `<ellipse cx="${x(s, 55)}" cy="180" rx="22" ry="7" transform="rotate(${-s * 8} ${x(s, 55)} 180)" fill="${h}" opacity=".95" filter="url(#fcGlow)"/>`)}
+      ${both('Concealer', (h, s) => `<ellipse cx="${x(s, 50)}" cy="181" rx="22" ry="7" transform="rotate(${-s * 8} ${x(s, 50)} 181)" fill="${h}" opacity=".95" filter="url(#fcGlow)"/>`)}
       ${both('Bronzer', (h, s) => `<ellipse cx="${x(s, 80)}" cy="236" rx="28" ry="10" transform="rotate(${-s * 28} ${x(s, 80)} 236)" fill="${h}" opacity=".34" filter="url(#fcCheek)"/><ellipse cx="${x(s, 62)}" cy="296" rx="34" ry="9" fill="${h}" opacity=".24" filter="url(#fcCheek)"/>`)}
       ${both('Blush', (h, s) => `<ellipse cx="${x(s, 62)}" cy="208" rx="29" ry="18" transform="rotate(${-s * 16} ${x(s, 62)} 208)" fill="${h}" opacity=".75" filter="url(#fcCheek)"/>`)}
       ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 78)}" cy="176" rx="19" ry="6" transform="rotate(${-s * 22} ${x(s, 78)} 176)" fill="${h}" opacity=".85" filter="url(#fcGlow)"/>`)}
       ${c['Highlighter'] ? `<ellipse cx="150" cy="196" rx="4" ry="20" fill="${c['Highlighter']}" opacity=".75" filter="url(#fcGlow)"/>` : ''}
     </g>
-    <g>
-      <path d="M44,142 C34,118 34,84 44,54 L56,26 L72,24 L84,12 L102,18 L118,8 L136,16 L152,6 L170,16 L188,8 L204,18 L222,10 L236,22 L252,24 L260,54 C268,84 266,118 256,142 L250,118 L252,96 L238,90 L228,80 L214,90 L198,80 L182,88 L166,78 L150,88 L134,78 L118,88 L102,80 L86,90 L72,82 L60,92 L48,100 Z" fill="url(#fcHair)"/>
-      <g fill="none" stroke="#a88462" stroke-opacity=".4" stroke-linecap="round" stroke-width="2.2"><path d="M80,44 C92,30 108,26 120,28"/><path d="M156,24 C172,22 188,28 198,38"/><path d="M216,42 C226,44 234,50 240,60"/></g>
+    <path d="${HAIR}" fill="url(#fcHair)"/>
+    <g clip-path="url(#fcHairClip)" fill="none" stroke="#c9a47e" stroke-opacity=".34" stroke-linecap="round" stroke-width="1.7">
+      <path d="M64,50 C78,32 100,20 126,16"/><path d="M76,62 C90,42 112,30 138,26"/><path d="M150,12 C176,12 200,18 220,32"/><path d="M166,26 C186,26 208,32 226,46"/>
+      <path d="M240,58 C248,68 253,80 254,94"/><path d="M98,70 C110,62 126,58 142,60"/><path d="M188,56 C202,50 218,52 230,62"/>
     </g>
     <path d="M143,196 C141,210 139,218 146,224 C150,226 157,226 160,224" fill="none" stroke="#9a6c58" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
-    <g transform="translate(148,116) scale(.38)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
-    <g transform="translate(152,116) scale(-.38,.38)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
-    <g fill="none" stroke="#4a3840" stroke-width="5.5" stroke-linecap="round" opacity=".85"><path d="M168,121 Q204,96 242,118"/><path d="M132,121 Q96,96 58,118"/></g>
+    <g transform="translate(144,117.6) scale(.36)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
+    <g transform="translate(156,117.6) scale(-.36,.36)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
+    <g fill="none" stroke="#4a3840" stroke-width="5.5" stroke-linecap="round" opacity=".85"><path d="M166,123 Q198,98 234,120"/><path d="M134,123 Q102,98 66,120"/></g>
     ${frecklesSvg(c['Freckle pen'])}
     ${stonesSvg(steps)}
     <g ${lip ? '' : 'opacity=".8"'}>
