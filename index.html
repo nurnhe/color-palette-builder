@@ -1775,11 +1775,10 @@ function stonesSvg(steps) {
     `<circle cx="${px.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="${st.sh.hex}" stroke="#fff" stroke-width=".9"/><circle cx="${(px - .8).toFixed(1)}" cy="${(y - .8).toFixed(1)}" r=".8" fill="#fff" opacity=".9"/>`)).join('');
 }
 function eyeSvg(steps) {
-  return `<svg class="eye" viewBox="0 -34 300 238" role="img" aria-label="Close-up: where each shade goes on the eye">
+  return `<svg class="eye" viewBox="0 0 300 170" role="img" aria-label="Close-up: where each shade goes on the eye">
     <defs>${eyeDefs('lk')}</defs>
     <ellipse cx="150" cy="85" rx="146" ry="82" fill="#f0d8c9"/>
     ${eyeArt(lookColors(steps), 'lk', graphicArt(steps))}
-    ${eyeMarkers(steps)}
   </svg>`;
 }
 // whole face: both eyes, cheeks, lips and anything else the look uses
@@ -1831,9 +1830,10 @@ function faceSvg(steps) {
       <filter id="fcGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
       <clipPath id="fcFace"><path d="${FACE}"/></clipPath>
       <radialGradient id="fcShade" cx="50%" cy="45%" r="60%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#6a3a28" stop-opacity=".16"/></radialGradient>
-      <linearGradient id="fcHair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a4033"/><stop offset="1" stop-color="#2f2019"/></linearGradient>
+      <linearGradient id="fcHair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a362b"/><stop offset="1" stop-color="#271912"/></linearGradient>
     </defs>
-    <path d="M150,6 C66,6 24,66 26,150 C28,230 20,290 36,334 L264,334 C280,290 272,230 274,150 C276,66 234,6 150,6 Z" fill="url(#fcHair)"/>
+    <ellipse cx="38" cy="162" rx="11" ry="18" fill="${skin}"/><ellipse cx="262" cy="162" rx="11" ry="18" fill="${skin}"/>
+    <ellipse cx="38" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/><ellipse cx="262" cy="162" rx="5" ry="10" fill="#6a3a28" opacity=".2"/>
     <path d="M128,286 C128,316 124,330 112,340 L188,340 C176,330 172,316 172,286 Z" fill="${skin}"/>
     <path d="M128,286 C128,316 124,330 112,340 L188,340 C176,330 172,316 172,286 Z" fill="#6a3a28" opacity=".16"/>
     <path d="${FACE}" fill="${skin}"/>
@@ -1845,7 +1845,10 @@ function faceSvg(steps) {
       ${both('Highlighter', (h, s) => `<ellipse cx="${x(s, 78)}" cy="176" rx="19" ry="6" transform="rotate(${-s * 22} ${x(s, 78)} 176)" fill="${h}" opacity=".85" filter="url(#fcGlow)"/>`)}
       ${c['Highlighter'] ? `<ellipse cx="150" cy="196" rx="4" ry="20" fill="${c['Highlighter']}" opacity=".75" filter="url(#fcGlow)"/>` : ''}
     </g>
-    <path d="M44,164 C34,66 84,20 150,20 C216,20 266,66 256,164 C252,108 226,58 160,54 C108,60 68,92 44,164 Z" fill="url(#fcHair)"/>
+    <g>
+      <path d="M44,142 C34,118 34,84 44,54 L56,26 L72,24 L84,12 L102,18 L118,8 L136,16 L152,6 L170,16 L188,8 L204,18 L222,10 L236,22 L252,24 L260,54 C268,84 266,118 256,142 L250,118 L252,96 L238,90 L228,80 L214,90 L198,80 L182,88 L166,78 L150,88 L134,78 L118,88 L102,80 L86,90 L72,82 L60,92 L48,100 Z" fill="url(#fcHair)"/>
+      <g fill="none" stroke="#a88462" stroke-opacity=".4" stroke-linecap="round" stroke-width="2.2"><path d="M80,44 C92,30 108,26 120,28"/><path d="M156,24 C172,22 188,28 198,38"/><path d="M216,42 C226,44 234,50 240,60"/></g>
+    </g>
     <path d="M143,196 C141,210 139,218 146,224 C150,226 157,226 160,224" fill="none" stroke="#9a6c58" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
     <g transform="translate(148,116) scale(.38)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
     <g transform="translate(152,116) scale(-.38,.38)">${eyeArt(c, 'fc', graphicArt(steps), false)}</g>
@@ -1858,7 +1861,6 @@ function faceSvg(steps) {
       <path d="M120,266 C132,269 168,269 180,266" fill="none" stroke="#000" stroke-opacity=".2" stroke-width="1.5" stroke-linecap="round"/>
       ${c['Lip gloss'] ? '<ellipse cx="150" cy="279" rx="12" ry="3.4" fill="#fff" opacity=".55"/>' : ''}
     </g>
-    ${faceMarkers(steps)}
   </svg>`;
 }
 
