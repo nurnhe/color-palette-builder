@@ -1642,7 +1642,13 @@ const savedMatch = () => look && looksSaved.find(l => lookSig(l.steps) === lookS
 let frecklesMode = store.get('freckles', 'random'), vibe = store.get('vibe', 'surprise'), look = null, hero = null;
 let looksSaved = store.get('looks', []);
 
-function slotScore(sh, slotKey, v, ref, used, jitter = true) {
+// color family of a shade, so looks can be spread across greys/silvers, warm neutrals and colors
+function shadeFam(sh) {
+  const c = hexToHsl(sh.hex);
+  if (c.s <= 12 || (c.s < 22 && c.h > 140 && c.h < 300)) return 'grey';
+  return (c.h <= 60 || c.h >= 330) && c.s < 55 ? 'warm' : 'color';
+}
+function slotScore(sh, slotKey, v, ref, used, jitter = true, fam = null) {
   const def = { ...SLOTS[slotKey], ...(v.over[slotKey] || {}) }, c = hexToHsl(sh.hex);
   let score = 0;
   if (c.l < def.l[0]) score += (def.l[0] - c.l) * 2; else if (c.l > def.l[1]) score += (c.l - def.l[1]) * 2;
@@ -1655,7 +1661,8 @@ function slotScore(sh, slotKey, v, ref, used, jitter = true) {
     else if (!(v.sat > 0 && slotKey === 'lower')) score += c.s * .35; // a neutral lid keeps the rest neutral
   }
   if (used.has(shadeKey(sh))) score += 45;
-  return score + (jitter ? rand(0, 14) : 0);
+  if (fam && shadeFam(sh) !== fam) score += 16;
+  return score + (jitter ? rand(0, 16) : 0);
 }
 
 // base products: light coverage for soft looks, fuller coverage for bold ones
@@ -1695,6 +1702,8 @@ function buildLook(keep = [], keepVibe = null) {
       put(open.reduce((a, b) => slotScore(hero, b.slot, v, null, used, false) < slotScore(hero, a.slot, v, null, used, false) ? b : a), hero, true);
     }
   }
+  // each look leans toward one family (greys/silvers, warm neutrals or colors) so they all show up equally often
+  const fam = vKey === 'pop' ? 'color' : pick(['grey', 'warm', 'color']);
   const eyeSteps = steps.filter(st => SLOTS[st.slot]);
   const lidSt = eyeSteps.find(st => st.slot === 'lid');
   const refOf = () => { const st = (lidSt && lidSt.sh ? lidSt : eyeSteps.find(x => x.sh && hexToHsl(x.sh.hex).s > 15)); return st && st.sh ? hexToHsl(st.sh.hex) : null; };
@@ -1702,7 +1711,7 @@ function buildLook(keep = [], keepVibe = null) {
     if (!st || st.sh) continue;
     const ref = refOf();
     let best = null, bs = Infinity;
-    for (const sh of eye) { const sc = slotScore(sh, st.slot, v, ref, used); if (sc < bs) { bs = sc; best = sh; } }
+    for (const sh of eye) { const sc = slotScore(sh, st.slot, v, ref, used, true, fam); if (sc < bs) { bs = sc; best = sh; } }
     put(st, best, false);
   }
   const ref = refOf();
