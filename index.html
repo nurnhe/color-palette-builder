@@ -1193,6 +1193,9 @@ const STASH = [
   { id: 'eveline-freckle-pen', brand: 'Eveline Cosmetics', name: 'Freckle Pen', category: 'Freckle pen', cols: 4, shades: [
     { name: 'Natural brown', code: '', finish: 'Waterproof', group: 'matte', hex: '#8a5a3c', desc: 'Brown waterproof pen for natural-looking faux freckles. Dot lightly across the nose and cheeks, then pat with a fingertip to soften. Exact shade number not on the pen.' },
   ] },
+  { id: 'maybelline-brow-inserts', brand: 'Maybelline New York', name: 'Brow Inserts Eyebrow Multiplying Pen & Brush', category: 'Brow', cols: 4, shades: [
+    { name: 'Ash Brown', code: '', finish: 'Pen + gel', group: 'matte', hex: '#8a7b6d', desc: 'Cool light brown with ash undertones. Two ends: shake the pen and draw hair-like strokes (step 1), then brush the brows up and out with the tinted gel (step 2). Shade name from the Maybelline range; confirm it matches your tube.' },
+  ] },
   { id: 'rhinestones', brand: 'My kit', name: 'Face rhinestones', category: 'Rhinestones', cols: 5, shades: [
     { name: 'Clear crystal', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#e9eef4', desc: 'Clear crystal stones that go with every look' },
     { name: 'Iridescent AB', code: '', finish: 'Rhinestone', group: 'sparkle', hex: '#d8c6f2', desc: 'Aurora stones that flash pink, blue and lilac' },
@@ -1432,7 +1435,7 @@ function panHtml(sh, pid, i, sub) {
 }
 const GROUP_BY = { product: 'Product', brand: 'Brand', type: 'Type', color: 'Color', finish: 'Finish' };
 const TYPE_LABEL = { 'Eyeshadow palette': 'Eyeshadow', 'Eyeshadow': 'Eyeshadow', 'Lipstick': 'Lips', 'Lip gloss': 'Lips', 'Lip liner': 'Lips' };
-const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Freckle pen', 'Lips', 'Graphic liner', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
+const TYPE_ORDER = ['Eyeshadow', 'Blush', 'Bronzer', 'Highlighter', 'Freckle pen', 'Brow', 'Lips', 'Graphic liner', 'Rhinestones', 'Foundation', 'Concealer', 'Eyeliner', 'Mascara'];
 const COLOR_ORDER = ['Whites & creams', 'Browns & nudes', 'Greys', 'Blacks', 'Pinks', 'Reds', 'Oranges & peaches', 'Yellows & golds', 'Greens', 'Teals', 'Blues', 'Purples'];
 function colorFamily(hex) {
   const { h, s, l } = hexToHsl(hex);
@@ -1590,6 +1593,7 @@ const FACE_STEPS = {
   'Blush': { label: 'Cheeks', tip: 'Smile, then blend from the apples of the cheeks up toward the temples.' },
   'Highlighter': { label: 'Highlight', tip: 'Tap on the top of the cheekbones and the bridge of the nose.' },
   'Freckle pen': { label: 'Freckles', tip: 'Dot lightly across the nose and cheeks, mostly where the sun would hit. Pat with a fingertip to soften.' },
+  'Brow': { label: 'Brows', tip: 'Step 1: shake the pen and draw light hair-like strokes where the brows are sparse. Step 2: brush the brows up and out with the gel end.' },
   'Eyeliner': { label: 'Eyeliner', tip: 'Draw as close to the lashes as you can.' },
   'Mascara': { label: 'Mascara', tip: 'Wiggle from the roots up.' },
   'Lip liner': { label: 'Lip liner', tip: 'Outline the lips, then fill in the corners.' },
@@ -1788,7 +1792,7 @@ function lashes(hex) {
 }
 function eyeArt(c, id, extra = '', brow = true) {
   const el = (k, shape) => c[k] ? shape.replace('F', c[k]) : '';
-  return `${brow ? '<path d="M52,40 Q150,2 266,40" fill="none" stroke="#5a4640" stroke-opacity=".55" stroke-width="8" stroke-linecap="round"/>' : ''}
+  return `${brow ? `<path d="M52,40 Q150,2 266,40" fill="none" stroke="${c['Brow'] || '#5a4640'}" stroke-opacity=".55" stroke-width="8" stroke-linecap="round"/>` : ''}
     <g clip-path="url(#${id}Above)"><g filter="url(#${id}Blur)">
       ${el('base', '<ellipse cx="152" cy="52" rx="116" ry="30" fill="F"/>')}
       ${el('transition', '<ellipse cx="158" cy="58" rx="106" ry="27" fill="F"/>')}
@@ -1880,7 +1884,7 @@ function faceSvg(steps) {
   const x = (side, dx) => 150 + side * dx;
   const lip = c['Lipstick'] || c['Lip gloss'];
   const skinHex = faceHex('skin'), dark = hexToHsl(skinHex).l < 45, LINE = dark ? '#e6dcd5' : '#8f8984';
-  const hairHex = faceHex('hairColor'), browHex = faceCfg.hairColor === 'neutral' ? '#8f8984' : mixHex(hairHex, '#2a1d17', .25);
+  const hairHex = faceHex('hairColor'), browHex = c['Brow'] || (faceCfg.hairColor === 'neutral' ? '#8f8984' : mixHex(hairHex, '#2a1d17', .25));
   const lipBase = lip || mixHex(skinHex, '#c0605f', dark ? .3 : .36);
   const hs = faceCfg.hairStyle;
   const UPPER = 'M120,268 C127,265 136,261 143,258.5 C146.5,257.5 148.5,259.5 150,260 C151.5,259.5 153.5,257.5 157,258.5 C164,261 173,265 180,268 C170,270.2 160,271 150,271 C140,271 130,270.2 120,268 Z';
