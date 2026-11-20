@@ -350,6 +350,10 @@ dialog h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 500
         <button class="btn" type="button" id="lookCopy">Copy</button>
       </div>
     </section>
+    <section class="saved" id="recentSec" aria-labelledby="recentTitle" hidden>
+      <h2 id="recentTitle">Recent looks</h2>
+      <ul class="saved-list" id="looksRecent"></ul>
+    </section>
     <section class="saved" aria-labelledby="looksSavedTitle">
       <h2 id="looksSavedTitle">Favorite looks</h2>
       <ul class="saved-list" id="looksSaved"></ul>
@@ -1644,7 +1648,7 @@ const packSteps = steps => steps.map(s => ({ slot: s.slot, key: shadeKey(s.sh), 
 const savedMatch = () => look && looksSaved.find(l => lookSig(l.steps) === lookSig(look.steps));
 
 let frecklesMode = store.get('freckles', 'random'), vibe = store.get('vibe', 'surprise'), look = null, hero = null;
-let looksSaved = store.get('looks', []);
+let looksSaved = store.get('looks', []), looksRecent = store.get('recent', []);
 
 // color family of a shade, so looks can be spread across greys/silvers, warm neutrals and colors
 function shadeFam(sh) {
@@ -1978,7 +1982,24 @@ function renderFav() {
   $('lookSave').setAttribute('aria-pressed', on); $('lookSaveTxt').textContent = on ? 'Favorited' : 'Favorite';
   $('favsLink').hidden = !n; $('favsLink').textContent = `♥ ${n} favorite ${n === 1 ? 'look' : 'looks'}`;
 }
-function newLook() { look = buildLook(); renderLook(); }
+// the last 5 looks you moved on from, so a look you liked is never lost
+function stashLook() {
+  if (!look || !look.steps.length) return;
+  const sig = lookSig(look.steps);
+  looksRecent = looksRecent.filter(l => lookSig(l.steps) !== sig);
+  looksRecent.unshift({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), at: Date.now(), title: look.title, vibe: look.vibe, steps: packSteps(look.steps) });
+  looksRecent = looksRecent.slice(0, 5); store.set('recent', looksRecent); renderRecent();
+}
+function renderRecent() {
+  $('recentSec').hidden = !looksRecent.length;
+  $('looksRecent').innerHTML = looksRecent.map(l => `<li class="saved-item">
+    <button class="saved-open" data-rid="${l.id}" aria-label="Go back to ${esc(l.title)}">
+      <span class="strip">${l.steps.map(s => { const sh = savedShade(s); return sh ? `<i style="--c:${sh.hex}"></i>` : ''; }).join('')}</span>
+      <span class="saved-meta"><b>${esc(l.title)}</b> · ${l.steps.length} steps</span>
+    </button>
+  </li>`).join('');
+}
+function newLook() { stashLook(); look = buildLook(); renderLook(); }
 function lookText(l) {
   return l.title + '\n' + l.steps.map((st, i) => `${i + 1}. ${slotInfo(st.slot).label}: ${st.sh.name} (${st.sh.finish}), ${st.sh.product.brand} ${st.sh.product.name}${st.place && PLACES[st.place] ? '. ' + PLACES[st.place].tip : ''}`).join('\n');
 }
@@ -2007,7 +2028,7 @@ $('starring').addEventListener('click', e => { if (e.target.closest('#heroClear'
 $('lookNew').addEventListener('click', newLook);
 $('lookReroll').addEventListener('click', () => {
   const keep = look.steps.filter(s => s.locked).map(s => ({ slot: s.slot, sh: s.sh, place: s.place }));
-  const title = look.title; look = buildLook(keep, look.vibe); if (keep.length) look.title = title; renderLook();
+  stashLook(); const title = look.title; look = buildLook(keep, look.vibe); if (keep.length) look.title = title; renderLook();
 });
 $('lookSteps').addEventListener('click', e => {
   const edit = e.target.closest('[data-edit]'); if (edit) return stepOpen(+edit.dataset.edit);
@@ -2038,10 +2059,19 @@ $('looksSaved').addEventListener('click', e => {
   const open = e.target.closest('[data-id]');
   if (open) {
     const l = looksSaved.find(x => x.id === open.dataset.id); if (!l) return;
+    stashLook();
     const steps = l.steps.map(s => ({ slot: s.slot, sh: savedShade(s), locked: false, ...(s.place ? { place: s.place } : {}) })).filter(s => s.sh);
     look = { vibe: VIBES[l.vibe] ? l.vibe : 'glam', title: l.title, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
     renderLook(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Opened ' + l.title);
   }
+});
+$('looksRecent').addEventListener('click', e => {
+  const open = e.target.closest('[data-rid]'); if (!open) return;
+  const l = looksRecent.find(x => x.id === open.dataset.rid); if (!l) return;
+  looksRecent = looksRecent.filter(x => x !== l); stashLook();
+  const steps = l.steps.map(s => ({ slot: s.slot, sh: savedShade(s), locked: false, ...(s.place ? { place: s.place } : {}) })).filter(s => s.sh);
+  look = { vibe: VIBES[l.vibe] ? l.vibe : 'glam', title: l.title, steps, eyesOnly: steps.every(st => SLOTS[st.slot]) };
+  renderLook(); window.scrollTo({ top: 0, behavior: 'smooth' }); toast('Back to ' + l.title);
 });
 $('shadeLook').addEventListener('click', () => {
   hero = allShades().find(sh => sh.name === openShade.name && sh.hex === openShade.hex) || null;
@@ -2054,7 +2084,7 @@ renderCount();
 palette = generate({ count, type: settings.type });
 renderPalette();
 renderSaved();
-renderVibes(); newLook(); renderLooksSaved();
+renderVibes(); newLook(); renderLooksSaved(); renderRecent();
 
 // ---- face chart from a photo: tap the photo to sample a color, match it to the closest owned shade ----
 const PH_ORDER = ['lid', 'crease', 'outer', 'inner', 'lower', 'liner', 'cat:Graphic liner', 'cat:Blush', 'cat:Lipstick', 'cat:Lip gloss', 'cat:Rhinestones'];
