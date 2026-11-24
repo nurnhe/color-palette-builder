@@ -1584,9 +1584,10 @@ const SLOTS = {
   lid:        { label: 'Lid',              l: [35, 85],  fin: ['sparkle', 'metallic'], tip: 'Press onto the center of the lid with a flat brush or a fingertip.' },
   inner:      { label: 'Inner corner',     l: [75, 100], fin: ['sparkle', 'metallic'], tip: 'Dab on the inner corner to open up the eye.' },
   liner:      { label: 'Upper lash line',  l: [0, 25],   fin: ['matte', 'metallic'], tip: 'Push along the upper lashes with a small angled brush. Flick out for a wing.' },
+  waterline:  { label: 'Waterline',       l: [0, 30],   fin: ['matte', 'metallic'], tip: 'Line the inner rim of the lower lid, in the wet edge right against the eyeball. Keep still and look up while it sets.' },
   lower:      { label: 'Lower lash line',  l: [25, 65],  fin: ['matte', 'metallic', 'sparkle'], tip: 'Smudge along the lower lashes to balance the eye.' },
 };
-const SLOT_ORDER = ['base', 'transition', 'crease', 'outer', 'lid', 'inner', 'liner', 'lower'];
+const SLOT_ORDER = ['base', 'transition', 'crease', 'outer', 'lid', 'inner', 'liner', 'lower', 'waterline'];
 // nature inspiration: real bird and flower color combos (light, mid, main, dark, accent). Looks are built from the stash shades closest to them.
 const NATURE = [
   { id: 'kingfisher', kind: 'Bird', name: 'Kingfisher', note: 'Electric blue and teal back with an orange breast.', light: '#f3efe6', mid: '#1f8a8a', main: '#2aa6c9', dark: '#123a52', accent: '#e8722a', face: '#e8722a' },
@@ -1607,7 +1608,7 @@ const NATURE = [
   { id: 'pansy', kind: 'Flower', name: 'Pansy', note: 'Deep violet with a golden face.', light: '#f3eefa', mid: '#8a5cc0', main: '#5a2a82', dark: '#2b1050', accent: '#f4c20d', face: '#8a5cc0' },
   { id: 'marigold', kind: 'Flower', name: 'Marigold', note: 'Orange and gold with rusty centers.', light: '#fbe5b0', mid: '#f6b21a', main: '#f28c1c', dark: '#6b2d12', accent: '#b4541c', face: '#c9733a' },
 ];
-const NAT_SLOT = { base: 'light', transition: 'light', crease: 'mid', lid: 'main', outer: 'dark', inner: 'accent', lower: 'accent', liner: 'dark' };
+const NAT_SLOT = { base: 'light', transition: 'light', crease: 'mid', lid: 'main', outer: 'dark', inner: 'accent', lower: 'accent', liner: 'dark', waterline: 'dark' };
 let natureMode = store.get('nature', 'auto');
 const labOf = hex => rgbToLab(hexToRgb(hex));
 function pickNature() {
@@ -1619,7 +1620,7 @@ const VIBES = {
   everyday: { name: 'Soft everyday', slots: ['base', 'crease', 'lid', 'inner'], sat: -1, over: { crease: { l: [45, 75] }, lid: { l: [65, 92] } } },
   bright:   { name: 'Light & bright', slots: ['base', 'transition', 'lid', 'inner', 'liner', 'lower'], sat: 0, over: { lid: { l: [70, 95] } } },
   smoky:    { name: 'Smoky', slots: SLOT_ORDER, sat: 0, over: { lid: { l: [10, 50] }, crease: { l: [20, 50] }, lower: { l: [10, 45] } } },
-  pop:      { name: 'Pop of color', slots: ['base', 'transition', 'crease', 'lid', 'inner', 'liner', 'lower'], sat: 1, over: {} },
+  pop:      { name: 'Pop of color', slots: ['base', 'transition', 'crease', 'lid', 'inner', 'liner', 'lower', 'waterline'], sat: 1, over: {} },
   graphic:  { name: 'Graphic liner', slots: ['base', 'lid', 'inner'], sat: -1, over: { lid: { l: [62, 95] } } },
   glam:     { name: 'Full glam', slots: SLOT_ORDER, sat: 0, over: { lid: { fin: ['sparkle'] }, inner: { fin: ['sparkle'] } } },
 };
@@ -1774,7 +1775,7 @@ function buildLook(keep = [], keepVibe = null, keepNat) {
     const ref = nat ? null : refOf();
     const tgt = nat && NAT_SLOT[st.slot] ? labOf(nat[NAT_SLOT[st.slot]]) : null;
     let best = null, bs = Infinity;
-    for (const sh of eye) { const sc = slotScore(sh, st.slot, v, ref, used, true, fam, tgt); if (sc < bs) { bs = sc; best = sh; } }
+    for (const sh of (st.slot === 'waterline' ? [...eye, ...shades.filter(x => inCat(x, 'Graphic liner') && !eye.includes(x))] : eye)) { const sc = slotScore(sh, st.slot, v, ref, used, true, fam, tgt) - (st.slot === 'waterline' && (inCat(sh, 'Graphic liner') || /colorfix/.test(sh.product.id)) ? 14 : 0); if (sc < bs) { bs = sc; best = sh; } }
     put(st, best, false);
   }
   const ref = refOf();
@@ -1851,6 +1852,7 @@ function eyeArt(c, id, extra = '', brow = true) {
       <circle cx="150" cy="96" r="12.5" fill="#15110f"/>
       <ellipse cx="139" cy="88" rx="6" ry="4.6" fill="#fff" opacity=".85"/><circle cx="160" cy="105" r="2.2" fill="#fff" opacity=".4"/>
       <rect x="40" y="30" width="230" height="64" fill="url(#${id}LidShade)"/>
+      ${el('waterline', '<path d="M46,114 Q150,152 254,100" fill="none" stroke="F" stroke-width="14" stroke-linecap="butt"/>')}
     </g>
     <circle cx="58" cy="112" r="4" fill="#d79b94" opacity=".75" clip-path="url(#${id}Eye)"/>
     <path d="M56,118 Q150,150 248,104" fill="none" stroke="#6b4a43" stroke-opacity=".3" stroke-width="1.8" stroke-linecap="round"/>
@@ -1890,7 +1892,7 @@ const FACE_DOT = {
   'cat:Foundation': [150, 84], 'cat:Concealer': [188, 183], 'cat:Highlighter': [236, 170], 'cat:Blush': [220, 206], 'cat:Bronzer': [238, 242],
   'cat:Freckle pen': [166, 200], 'cat:Lipstick': [184, 270], 'cat:Lip gloss': [150, 296],
 };
-const EYE_ANCHOR = { base: [120, 52], transition: [170, 52], crease: [210, 64], lid: [146, 80], outer: [236, 82], inner: [62, 100], liner: [226, 88], lower: [150, 138],
+const EYE_ANCHOR = { base: [120, 52], transition: [170, 52], crease: [210, 64], lid: [146, 80], outer: [236, 82], inner: [62, 100], liner: [226, 88], lower: [150, 138], waterline: [150, 134],
   'cat:Eyeliner': [96, 100], 'cat:Mascara': [180, 36], 'cat:Graphic liner': [262, 92] };
 const dotSvg = (cx, cy, n, hex, r = 8) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${hex}" stroke="#fff" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="${r + 1}" fill="none" stroke="#3a2c28" stroke-opacity=".55" stroke-width="1"/><text x="${cx}" y="${cy + r * .42}" text-anchor="middle" font-size="${r * 1.2}" font-weight="800" fill="${hexToHsl(hex).l > 62 ? '#2a1f1d' : '#fff'}" font-family="system-ui,sans-serif">${n}</text>`;
 function faceMarkers(steps) {
@@ -2151,7 +2153,7 @@ renderNatureSel(); renderVibes(); newLook(); renderLooksSaved(); renderRecent();
 
 // ---- face chart from a photo: tap the photo to sample a color, match it to the closest owned shade ----
 const PH_ORDER = ['lid', 'crease', 'outer', 'inner', 'lower', 'liner', 'cat:Graphic liner', 'cat:Blush', 'cat:Lipstick', 'cat:Lip gloss', 'cat:Rhinestones'];
-const PH_NAME = { lid: 'Lid', crease: 'Crease', outer: 'Outer corner', inner: 'Inner corner', lower: 'Lower lash line', liner: 'Eyeliner' };
+const PH_NAME = { lid: 'Lid', crease: 'Crease', outer: 'Outer corner', inner: 'Inner corner', lower: 'Lower lash line', waterline: 'Waterline', liner: 'Eyeliner' };
 const phSrc = document.createElement('canvas');
 const ph = { picks: {}, cur: 'lid', ready: false, run: 0 };
 const phName = slot => PH_NAME[slot] || slotInfo(slot).label;
@@ -2291,7 +2293,7 @@ $('photoMake').addEventListener('click', () => {
 
 // ---- edit the steps of a look by hand; the face chart redraws on every change ----
 const ALL_STEPS = [...SLOT_ORDER, ...Object.keys(FACE_STEPS).map(c => 'cat:' + c)];
-const stepPool = slot => allShades().filter(sh => SLOTS[slot] ? EYE_CATS.includes(sh.product.category) : inCat(sh, slot.slice(4)));
+const stepPool = slot => allShades().filter(sh => SLOTS[slot] ? EYE_CATS.includes(sh.product.category) || (slot === 'waterline' && inCat(sh, 'Graphic liner')) : inCat(sh, slot.slice(4)));
 const stepDesigns = slot => slot === 'cat:Rhinestones' ? RH_PLACES : slot === 'cat:Graphic liner' ? GR_STYLES : null;
 const ed = { i: -1, slot: null };
 // a favorite that matched before the change follows the edit
